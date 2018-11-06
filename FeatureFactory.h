@@ -15,6 +15,8 @@ public:
 	FeatureFactory(Eigen::MatrixXf& neighborhood, Features feat);
 	bool computeFeature();
 
+	static const int numOfPossibleProjections = 10;
+
 private:
 	bool redColorDiff();
 	bool greenColorDiff();

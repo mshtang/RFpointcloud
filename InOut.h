@@ -24,21 +24,5 @@ public:
 	void writeToDisk(const char *filename, Eigen::MatrixXf &data);
 	void writeToDisk(const char * filename, Eigen::MatrixXi & data);
 
-	/*template<typename Der>
-	void writeToDisk(const char *filename, Eigen::MatrixBase<Der> &data);*/
+	static const size_t numOfNN = 10;
 };
-
-//template<typename Der>
-//inline void InOut::writeToDisk(const char * filename, Eigen::MatrixBase<Der> &data)
-//{	
-//
-//	std::ofstream output(filename);
-//	for (int r = 0; r < data.rows(); ++r)
-//	{
-//		for (int c = 0; c < data.cols(); ++c)
-//		{
-//			output << data(r, c) << " ";
-//		}
-//		output << std::endl;
-//	}
-//}

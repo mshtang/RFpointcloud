@@ -3,29 +3,30 @@
 #include <algorithm>
 #include <vector>
 #include <random>
+#include "InOut.h"
 
 /******************************************************************************************
- * this class will contain the features at each node, a "feature" consists of two randomly
- * selected points (ID) from the neighborhood and a randomly selected projection operation
- * (from FeatureFactory)
+ * this class will contain the features at each node, a "feature" consists of one or two or 
+ * four randomly selected points (ID) from the neighborhood with each has its own voxel size
+ * (number of points around each selected point), thus one/two/four voxels are built and they
+ * will be further projected to a real value by one of the feature type functions.
  *****************************************************************************************/
 struct Features
 {
-	Features():
-		_point1(0),
-		_point2(0),
-		_featType(0)
-	{}
-	
-	void operator=(Features& feat)
+	int _numVoxels;
+	std::vector<int> _pointId;
+	std::vector<int> _voxelSize;
+	Features& operator=(const Features& rhs)
 	{
-		this->_point1 = feat._point1;
-		this->_point2 = feat._point2;
+		_numVoxels = rhs._numVoxels;
+		_pointId = rhs._pointId;
+		_voxelSize = rhs._voxelSize;
+		return *this;
 	}
-
-	int _point1;
-	int _point2;
 	int _featType;
+	const int minSamplesPerVoxel = static_cast<int>(0.1*InOut::numOfNN);
+	const int maxSamplesPerVoxel = static_cast<int>(0.5*InOut::numOfNN);
+
 };
 
 
@@ -62,6 +63,7 @@ public:
 	 * are randomly chosen from all these features
 	 ***************************************************************************************/
 	void randomSampleFeatures();
+
 
 	/***************************************************************************************
 	 * return a matrix representing the neighborhood of the pointId-th point
@@ -104,6 +106,9 @@ private:
 	int _numSelectedSamples;
 	int _numFeature;
 
+	// randomly sample from {1, 2, 4} because there are 1/2/4 possible
+	// voxels in a neighborhood
+	int randomFrom124();
 };
 
 

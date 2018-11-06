@@ -24,6 +24,10 @@ int main(int argc, char** argv)
 	Eigen::MatrixXf trnDists;
 	const int numNeighbors = 10;
 	trnObj.searchNN(trnData, numNeighbors, trnIndices, trnDists);
+
+	Sample trnSamples(&trnData, &trnLabels, &trnIndices, &trnDists, 8, 10);
+	trnSamples.randomSampleFeatures();
+
 	
 	int numTrees = 1;
 	int maxDepths = 4;

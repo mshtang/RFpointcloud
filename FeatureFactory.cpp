@@ -42,30 +42,36 @@ bool FeatureFactory::computeFeature()
 
 inline bool FeatureFactory::redColorDiff()
 {
-	return _neighborhood(_feat._point1, 4) < _neighborhood(_feat._point2, 4) ? true : false;
+	//return _neighborhood(_feat._point1, 4) < _neighborhood(_feat._point2, 4) ? true : false;
+	return 1;
 }
 
 inline bool FeatureFactory::greenColorDiff()
 {
-	return _neighborhood(_feat._point1, 5) < _neighborhood(_feat._point2, 5) ? true : false;
+	//return _neighborhood(_feat._point1, 5) < _neighborhood(_feat._point2, 5) ? true : false;
+	return 1;
 }
 
 inline bool FeatureFactory::blueColorDiff()
 {
-	return _neighborhood(_feat._point1, 6) < _neighborhood(_feat._point2, 6) ? true : false;
+	//return _neighborhood(_feat._point1, 6) < _neighborhood(_feat._point2, 6) ? true : false;
+	return 1;
 }
 
 inline bool FeatureFactory::xDiff()
 {
-	return _neighborhood(_feat._point1, 0) < _neighborhood(_feat._point2, 0) ? true : false;
+	//return _neighborhood(_feat._point1, 0) < _neighborhood(_feat._point2, 0) ? true : false;
+	return 1;
 }
 
 inline bool FeatureFactory::yDiff()
 {
-	return _neighborhood(_feat._point1, 1) < _neighborhood(_feat._point2, 1) ? true : false;
+	//return _neighborhood(_feat._point1, 1) < _neighborhood(_feat._point2, 1) ? true : false;
+	return 1;
 }
 
 inline bool FeatureFactory::zDiff()
 {
-	return _neighborhood(_feat._point1, 2) < _neighborhood(_feat._point2, 2) ? true : false;
+	//return _neighborhood(_feat._point1, 2) < _neighborhood(_feat._point2, 2) ? true : false;
+	return 1;
 }

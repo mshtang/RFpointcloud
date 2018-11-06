@@ -1,7 +1,7 @@
 #include "Sample.h"
 #include <ctime>
 #include <iostream>
-
+#include "FeatureFactory.h"
 
 Sample::Sample(Eigen::MatrixXf *dataset, Eigen::VectorXi *labels, 
 			   Eigen::MatrixXi *indexMat, Eigen::MatrixXf *distMat, int numClass, int numFeature):
@@ -65,24 +65,34 @@ void Sample::randomSampleFeatures()
 	Features feature;
 	// total population
 	int numPoints = _indexMat->cols();
-	// for each feauture, it contains two random points from the neighborhood
-	// and a node test function from the FeatureFactory
 	for (int i = 0; i < _numFeature; ++i)
 	{
-		// randomly select two*_numFeature points from neighboorhood
-		Random randomPoints(numPoints, 2);
-		std::vector<int> selectedPointId = randomPoints.sampleWithoutReplacement();
-	
-		// randomly select one of the features from FeatureFactory
-		//int selectedFeatType = rand() % 6; // this way of generating random number
-		// is not reliable, ie. is not truely random
-		Random randomFeatType(6, 1); // 6 features in the factory now
-		int selectedFeatType = randomFeatType.sampleWithoutReplacement()[0];
-		feature._point1 = selectedPointId[0];
-		feature._point2 = selectedPointId[1];
-		feature._featType = selectedFeatType;
+		Features feature;
+		// number of voxels in this feature
+		feature._numVoxels = randomFrom124();
+		Random rd(numPoints, feature._numVoxels);
+		feature._pointId = rd.sampleWithoutReplacement();
+		// for each voxel, randomly choose the number of points in each voxel which is
+		// in the range (0.1*numOfPointsInNeighborhood, 0.5*numOfPointsInNeighborhood)
+		for (int i = 0; i < feature._numVoxels; ++i)
+		{
+			Random rd(feature.maxSamplesPerVoxel - feature.minSamplesPerVoxel, 1);
+			int tmp = rd.sampleWithoutReplacement().at(0) + feature.minSamplesPerVoxel;
+			feature._voxelSize.push_back(tmp);
+		}
+		// randomly select a projection type from all possible projections
+		Random rd2(FeatureFactory::numOfPossibleProjections, 1);
+		feature._featType = rd2.sampleWithoutReplacement().at(0);
 		_features.push_back(feature);
 	}
+}
+
+int Sample::randomFrom124()
+{
+	int arr[] = { 1, 2, 4 };
+	Random rd(3, 1);
+	int inx = rd.sampleWithoutReplacement().at(0);
+	return arr[inx];
 }
 
 Eigen::MatrixXf Sample::buildNeighborhood(int pointId) const
