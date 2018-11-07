@@ -1,4 +1,5 @@
 Debug/
+test/
 mtTest.vcxproj
 mtTest.vcxproj.filters
 mtTest.vcxproj.user

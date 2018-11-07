@@ -24,5 +24,5 @@ public:
 	void writeToDisk(const char *filename, Eigen::MatrixXf &data);
 	void writeToDisk(const char * filename, Eigen::MatrixXi & data);
 
-	static const size_t numOfNN = 10;
+	static const size_t numOfNN = 20;
 };

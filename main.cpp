@@ -22,12 +22,19 @@ int main(int argc, char** argv)
 	// indexing instead of searching again
 	Eigen::MatrixXi trnIndices;
 	Eigen::MatrixXf trnDists;
-	const int numNeighbors = 10;
+	const int numNeighbors = 20;
 	trnObj.searchNN(trnData, numNeighbors, trnIndices, trnDists);
 
-	Sample trnSamples(&trnData, &trnLabels, &trnIndices, &trnDists, 8, 10);
+	Sample trnSamples(&trnData, &trnLabels, &trnIndices, &trnDists, 8, 1);
+	Eigen::MatrixXf local_nei = trnSamples.buildNeighborhood(0);
+	std::cout << "Neighborhood of Point 1 is:\n" << local_nei << std::endl;
 	trnSamples.randomSampleFeatures();
-
+	std::vector<Features> feats = trnSamples.getSelectedFeatures();
+	std::cout << "No. of voxels are " << feats.at(0)._numVoxels << std::endl;
+	FeatureFactory ff(local_nei, feats[0]);
+	ff.localNeighbors();
+	std::cout << "Local neighbors are:\n" << ff.getLocalNeighbors() << std::endl;
+	ff.buildVoxels();
 	
 	int numTrees = 1;
 	int maxDepths = 4;
