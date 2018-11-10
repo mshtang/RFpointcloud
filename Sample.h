@@ -16,6 +16,13 @@ struct Features
 	int _numVoxels;
 	std::vector<int> _pointId;
 	std::vector<int> _voxelSize;
+	int _featType;
+	// to ensure there are at least 10 points in each voxel, so that 3d features can be calculated
+	int minSamples = static_cast<int>(0.1*InOut::numOfNN);
+	const int minSamplesPerVoxel = minSamples > 10 ? minSamples : 10;
+	int maxSamples = static_cast<int>(0.5*InOut::numOfNN);
+	int tmpMaxSamples = (maxSamples > minSamplesPerVoxel + 10) ? maxSamples : (minSamplesPerVoxel + 10);
+	const int maxSamplesPerVoxel = tmpMaxSamples > InOut::numOfNN ? InOut::numOfNN : tmpMaxSamples;
 	Features& operator=(const Features& rhs)
 	{
 		_numVoxels = rhs._numVoxels;
@@ -23,9 +30,14 @@ struct Features
 		_voxelSize = rhs._voxelSize;
 		return *this;
 	}
-	int _featType;
-	const int minSamplesPerVoxel = static_cast<int>(0.1*InOut::numOfNN);
-	const int maxSamplesPerVoxel = static_cast<int>(0.5*InOut::numOfNN);
+	/*Features()
+	{
+		if (minSamplesPerVoxel > maxSamplesPerVoxel)
+		{
+			std::cerr << "There are no enough points in the neighborhood to build sufficient various voxels";
+			std::cerr << "Try to enlarge the value of nearest neighbors. 50 is the recommended minimal value.";
+		}
+	}*/
 
 };
 
@@ -133,7 +145,9 @@ public:
 		candidates(population);
 
 		std::random_device rd;
-		std::mt19937 gen(rd());
+		//std::mt19937 gen(rd());
+		// for debugging purposes, to generate deterministic numbers
+		std::mt19937 gen(123);
 		std::shuffle(population.begin(), population.end(), gen);
 		std::vector<int> samples(population.begin(), population.begin() + _sampleSize);
 		return samples;

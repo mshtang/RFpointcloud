@@ -60,9 +60,6 @@ void Sample::randomSampleDataset(Eigen::VectorXi &selectedSamplesId, int numSele
 
 void Sample::randomSampleFeatures()
 {
-	// reset member variable
-	// _features.resize(_numFeature);
-	Features feature;
 	// total population
 	int numPoints = _indexMat->cols();
 	for (int i = 0; i < _numFeature; ++i)
