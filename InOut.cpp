@@ -78,6 +78,7 @@ void InOut::readLabels(const char* filename, Eigen::VectorXi &labels) {
 
 void InOut::searchNN(const Eigen::MatrixXf & cloud, const size_t k, Eigen::MatrixXi &indices, Eigen::MatrixXf &dists)
 {
+	int k1 = k+1;
 	// Eigen::MatrixXf uses colMajor as default
 	// copy the coords to a RowMajor matrix and search in this matrix
 	// the nearest points for each datapoint
@@ -91,20 +92,20 @@ void InOut::searchNN(const Eigen::MatrixXf & cloud, const size_t k, Eigen::Matri
 	mat_index.index->buildIndex();
 	/*Eigen::MatrixXi ret_indices_mat(cloud.rows(), k);
 	Eigen::MatrixXf ret_dists_mat(cloud.rows(), k);*/
-	indices.resize(cloud.rows(), k);
-	dists.resize(cloud.rows(), k);
+	indices.resize(cloud.rows(), k1);
+	dists.resize(cloud.rows(), k1);
 	// do a knn search
 	for (int i = 0; i < coords.rows(); ++i) 
 	{
 		// coords is RowMajor so coords.data()[i*3+0 / +1  / +2] represents the ith row of coords
-		std::vector<float> query_pt{ coords.data()[i*3+0], coords.data()[i*3+1], coords.data()[i*3+2] };
+		std::vector<float> query_pt{ coords.data()[i * 3 + 0], coords.data()[i * 3 + 1], coords.data()[i * 3 + 2] };
 		
-		std::vector<size_t> ret_indices(k);
-		std::vector<float> out_dists_sqr(k);
-		nanoflann::KNNResultSet<float> resultSet(k);
+		std::vector<size_t> ret_indices(k1);
+		std::vector<float> out_dists_sqr(k1);
+		nanoflann::KNNResultSet<float> resultSet(k1);
 		resultSet.init(&ret_indices[0], &out_dists_sqr[0]);
 		mat_index.index->findNeighbors(resultSet, &query_pt[0], nanoflann::SearchParams(10));
-		for (size_t j = 0; j < k; ++j) 
+		for (size_t j = 0; j < k1; ++j) 
 		{
 			indices(i, j) = ret_indices[j];
 			dists(i, j) = std::sqrt(out_dists_sqr[j]);

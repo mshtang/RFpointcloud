@@ -3,29 +3,42 @@
 #include <algorithm>
 #include <vector>
 #include <random>
+#include "InOut.h"
 
 /******************************************************************************************
- * this class will contain the features at each node, a "feature" consists of two randomly
- * selected points (ID) from the neighborhood and a randomly selected projection operation
- * (from FeatureFactory)
+ * this class will contain the features at each node, a "feature" consists of one or two or 
+ * four randomly selected points (ID) from the neighborhood with each has its own voxel size
+ * (number of points around each selected point), thus one/two/four voxels are built and they
+ * will be further projected to a real value by one of the feature type functions.
  *****************************************************************************************/
 struct Features
 {
-	Features():
-		_point1(0),
-		_point2(0),
-		_featType(0)
-	{}
-	
-	void operator=(Features& feat)
-	{
-		this->_point1 = feat._point1;
-		this->_point2 = feat._point2;
-	}
-
-	int _point1;
-	int _point2;
+	int _numVoxels;
+	std::vector<int> _pointId;
+	std::vector<int> _voxelSize;
 	int _featType;
+	// to ensure there are at least 10 points in each voxel, so that 3d features can be calculated
+	int minSamples = static_cast<int>(0.1*InOut::numOfNN);
+	const int minSamplesPerVoxel = minSamples > 10 ? minSamples : 10;
+	int maxSamples = static_cast<int>(0.5*InOut::numOfNN);
+	int tmpMaxSamples = (maxSamples > minSamplesPerVoxel + 10) ? maxSamples : (minSamplesPerVoxel + 10);
+	const int maxSamplesPerVoxel = tmpMaxSamples > InOut::numOfNN ? InOut::numOfNN : tmpMaxSamples;
+	Features& operator=(const Features& rhs)
+	{
+		_numVoxels = rhs._numVoxels;
+		_pointId = rhs._pointId;
+		_voxelSize = rhs._voxelSize;
+		return *this;
+	}
+	/*Features()
+	{
+		if (minSamplesPerVoxel > maxSamplesPerVoxel)
+		{
+			std::cerr << "There are no enough points in the neighborhood to build sufficient various voxels";
+			std::cerr << "Try to enlarge the value of nearest neighbors. 50 is the recommended minimal value.";
+		}
+	}*/
+
 };
 
 
@@ -62,6 +75,7 @@ public:
 	 * are randomly chosen from all these features
 	 ***************************************************************************************/
 	void randomSampleFeatures();
+
 
 	/***************************************************************************************
 	 * return a matrix representing the neighborhood of the pointId-th point
@@ -104,6 +118,9 @@ private:
 	int _numSelectedSamples;
 	int _numFeature;
 
+	// randomly sample from {1, 2, 4} because there are 1/2/4 possible
+	// voxels in a neighborhood
+	int randomFrom124();
 };
 
 
@@ -128,7 +145,9 @@ public:
 		candidates(population);
 
 		std::random_device rd;
-		std::mt19937 gen(rd());
+		//std::mt19937 gen(rd());
+		// for debugging purposes, to generate deterministic numbers
+		std::mt19937 gen(123);
 		std::shuffle(population.begin(), population.end(), gen);
 		std::vector<int> samples(population.begin(), population.begin() + _sampleSize);
 		return samples;
