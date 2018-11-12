@@ -98,16 +98,25 @@ Eigen::MatrixXf Sample::buildNeighborhood(int pointId) const
 	int k = _indexMat->cols();
 	// datapoint dimension
 	int d = _dataset->cols();
+	// the last dimension represents the dist to the central point
+	int d1 = d + 1;
 	/*std::cout << "pointID\n";
 	std::cout << pointId << std::endl;*/
 	Eigen::MatrixXf neighborhood(k, d);
 	Eigen::VectorXi candidatePointIndices;
 	candidatePointIndices = _indexMat->row(pointId);
+
 	// std::cout << "candidates\n";
 	// std::cout << candidatePointIndices << std::endl;
 	//neighborhood.row(0) = _dataset.row(pointId);
-	for (int i = 0; i < k; ++i) {
+	for (int i = 0; i < k; ++i)
 		neighborhood.row(i) = _dataset->row(candidatePointIndices[i]);
-	}
-	return neighborhood;
+
+	Eigen::VectorXf dists = _distMat->row(pointId);
+	Eigen::MatrixXf newdists = Eigen::Map <Eigen::Matrix<float, -1, 1>> (dists.data(), dists.size());
+
+	Eigen::MatrixXf neighWithDist(k, d1);
+	neighWithDist << neighborhood, newdists;
+	//std::cout << neighWithDist;
+	return neighWithDist;
 }

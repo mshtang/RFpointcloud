@@ -88,9 +88,8 @@ void RandomForest::predict(const char* testDataPath, Eigen::VectorXi &predictedL
 	Eigen::MatrixXi testIndices;
 	Eigen::MatrixXf testDists;
 	InOut testObj;
-	int numNeighbors = 10;
 	testObj.readPoints(testDataPath, testset);
-	testObj.searchNN(testset, numNeighbors, testIndices, testDists);
+	testObj.searchNN(testset, testIndices, testDists);
 
 	int numTests = testset.rows();
 	predictedLabels.resize(numTests);

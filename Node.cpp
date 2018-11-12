@@ -96,6 +96,7 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId, float thresh)
 	
 		for (int j = 0; j < numSamples; ++j)
 		{
+			float maxRadius = 0;
 			Eigen::MatrixXf neigh = _samples->buildNeighborhood(sampleId[j]);
 			FeatureFactory nodeFeat(neigh, featCandidates[i]);
 			if (nodeFeat.computeFeature() == false)
