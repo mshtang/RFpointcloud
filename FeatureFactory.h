@@ -21,14 +21,20 @@ public:
 	Eigen::MatrixXf getLocalDists() { return _localDists; }
 
 	//TODO: modify according to the final number of projections
-	static const int numOfPossibleProjections = 9;
+	static const int numOfPossibleProjections = 17;
 	std::vector<Eigen::Matrix3f> computeCovarianceMatrix();
+
+	Eigen::Vector3f computeEigenValues(Eigen::Matrix3f covMat);
+
+	std::vector<Eigen::Vector3f> computeEigenValues(std::vector<Eigen::Matrix3f> covTensor);
 
 private:
 	void localNeighbors();
 	void buildVoxels();
-	std::vector<Eigen::MatrixXf> averageVoxels();
-	bool compareChannels(std::vector<Eigen::MatrixXf> avg_voxels, int channelNo, bool isInRGBSpace=true);
+	std::vector<Eigen::VectorXf> averageVoxels();
+	bool compareChannels(std::vector<Eigen::VectorXf> avg_voxels, int channelNo, bool isInRGBSpace=true);
+
+	Eigen::Matrix3f computeCovarianceMatrix(Eigen::MatrixXf neigh);
 
 	
 	Eigen::MatrixXf _neighborhood;

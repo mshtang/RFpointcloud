@@ -76,9 +76,9 @@ void InOut::readLabels(const char* filename, Eigen::VectorXi &labels) {
 	std::cout << "Reading labels finished." << std::endl;
 }
 
-void InOut::searchNN(const Eigen::MatrixXf & cloud, const size_t k, Eigen::MatrixXi &indices, Eigen::MatrixXf &dists)
+void InOut::searchNN(const Eigen::MatrixXf & cloud, Eigen::MatrixXi &indices, Eigen::MatrixXf &dists)
 {
-	int k1 = k+1;
+	int k1 = numOfNN+1;
 	// Eigen::MatrixXf uses colMajor as default
 	// copy the coords to a RowMajor matrix and search in this matrix
 	// the nearest points for each datapoint

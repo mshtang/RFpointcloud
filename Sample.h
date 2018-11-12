@@ -4,6 +4,7 @@
 #include <vector>
 #include <random>
 #include "InOut.h"
+#include <iostream>
 
 /******************************************************************************************
  * this class will contain the features at each node, a "feature" consists of one or two or 
@@ -11,8 +12,27 @@
  * (number of points around each selected point), thus one/two/four voxels are built and they
  * will be further projected to a real value by one of the feature type functions.
  *****************************************************************************************/
-struct Features
-{
+struct Features{
+	/*Features()
+	{
+		_numVoxels = 0;
+		_featType = -1;
+	}
+	Features(const Features& rhs):
+		_numVoxels(rhs._numVoxels),
+		_pointId(rhs._pointId),
+		_voxelSize(rhs._voxelSize),
+		_featType(rhs._featType)		
+	{
+	}*/
+	Features& operator=(const Features& rhs)
+	{
+		_numVoxels = rhs._numVoxels;
+		_pointId = rhs._pointId;
+		_voxelSize = rhs._voxelSize;
+		_featType = rhs._featType;
+		return *this;
+	}
 	int _numVoxels;
 	std::vector<int> _pointId;
 	std::vector<int> _voxelSize;
@@ -23,22 +43,6 @@ struct Features
 	int maxSamples = static_cast<int>(0.5*InOut::numOfNN);
 	int tmpMaxSamples = (maxSamples > minSamplesPerVoxel + 10) ? maxSamples : (minSamplesPerVoxel + 10);
 	const int maxSamplesPerVoxel = tmpMaxSamples > InOut::numOfNN ? InOut::numOfNN : tmpMaxSamples;
-	Features& operator=(const Features& rhs)
-	{
-		_numVoxels = rhs._numVoxels;
-		_pointId = rhs._pointId;
-		_voxelSize = rhs._voxelSize;
-		return *this;
-	}
-	/*Features()
-	{
-		if (minSamplesPerVoxel > maxSamplesPerVoxel)
-		{
-			std::cerr << "There are no enough points in the neighborhood to build sufficient various voxels";
-			std::cerr << "Try to enlarge the value of nearest neighbors. 50 is the recommended minimal value.";
-		}
-	}*/
-
 };
 
 
@@ -145,9 +149,11 @@ public:
 		candidates(population);
 
 		std::random_device rd;
-		//std::mt19937 gen(rd());
+		std::mt19937 gen(rd());
+		// DEBUG to uncomment
+		// std::cout << "seed is " << rd() << std::endl;
 		// for debugging purposes, to generate deterministic numbers
-		std::mt19937 gen(123);
+		//std::mt19937 gen(123);
 		std::shuffle(population.begin(), population.end(), gen);
 		std::vector<int> samples(population.begin(), population.begin() + _sampleSize);
 		return samples;

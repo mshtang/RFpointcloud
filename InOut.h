@@ -18,11 +18,11 @@ public:
 	// search the k nearest neighbors for each point the cloud
 	// `indices` and `dists` are stored so that the query of a 
 	// point's neighborhood can be done in constant time
-	void searchNN(const Eigen::MatrixXf &cloud, const size_t k, Eigen::MatrixXi &indices, Eigen::MatrixXf &dists);
+	void searchNN(const Eigen::MatrixXf &cloud, Eigen::MatrixXi &indices, Eigen::MatrixXf &dists);
 	
 	// for debugging purposes
 	void writeToDisk(const char *filename, Eigen::MatrixXf &data);
 	void writeToDisk(const char * filename, Eigen::MatrixXi & data);
 
-	static const size_t numOfNN = 20;
+	static const size_t numOfNN = 50;
 };
