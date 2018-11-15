@@ -18,9 +18,6 @@ float Node::computeGini(std::vector<int> & samplesId, std::vector<float> &probs)
 	int numSamples = samplesId.size();
 	int numClasses = _samples->getNumClasses();
 	probs.resize(numClasses, 0);
-	// reset probs;
-	for (int i = 0; i < numClasses; ++i)
-		probs[i] = 0;
 	
 	for (int i = 0; i < numSamples; ++i)
 	{
@@ -46,8 +43,8 @@ void Node::computeNodeGini()
 	_gini = computeGini(samplesIdVec, _probs);
 }
 
-// split the node into two children and compute the gini in each child node
-void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId, float thresh)
+// split the node into two children and compute the gini at each child node
+void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 {
 	Eigen::MatrixXf data = *(_samples->_dataset);
 	Eigen::VectorXi labels =*( _samples->_labels);
@@ -71,34 +68,22 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId, float thresh)
 	std::vector<float> bestLeftProbs;
 	std::vector<float> bestRightProbs;
 
-	// temporary variables for storing intermediate parameters
-	float tBestInfoGain = 0;
-	float tBestLeftGini = 0;
-	float tBestRightGini = 0;
-	Features tBestFeat = featCandidates[0];
-	std::vector<int> tBestLeftChild;
-	std::vector<int> tBestRightchild;
-	std::vector<float> tBestLeftProbs;
-	std::vector<float> tBestRightProbs;
-
 	for (int i = 0; i < numFeats; ++i)
 	{
 		// apply each candidate feature to the samples at this node
 		float infoGain = 0;
 		float leftGini = 0;
 		float rightGini = 0;
-		Features bestFeat = featCandidates[0];
+		Features feat = featCandidates[i];
 		std::vector<int> leftChildSamples;
 		std::vector<int> rightChildSamples;
 		std::vector<float> leftProbs;
 		std::vector<float> rightProbs;
 		
-	
 		for (int j = 0; j < numSamples; ++j)
 		{
-			float maxRadius = 0;
 			Eigen::MatrixXf neigh = _samples->buildNeighborhood(sampleId[j]);
-			FeatureFactory nodeFeat(neigh, featCandidates[i]);
+			FeatureFactory nodeFeat(neigh, feat);
 			if (nodeFeat.computeFeature() == false)
 				leftChildSamples.push_back(sampleId[j]);
 			else
@@ -110,34 +95,22 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId, float thresh)
 		float leftRatio = leftChildSamples.size() / (float)numSamples;
 		float rightRatio = rightChildSamples.size() / (float)numSamples;
 		infoGain = _gini - leftGini * leftRatio - rightGini * rightRatio;
-		if (infoGain > tBestInfoGain)
+		if (infoGain > bestInfoGain)
 		{
-			tBestInfoGain = infoGain;
-			tBestLeftGini = leftGini;
-			tBestRightGini = rightGini;
-			tBestFeat = bestFeat;
-			tBestLeftChild = leftChildSamples;
-			tBestRightchild = rightChildSamples;
-			tBestLeftProbs = leftProbs;
-			tBestRightProbs = rightProbs;
+			bestInfoGain = infoGain;
+			bestLeftGini = leftGini;
+			bestRightGini = rightGini;
+			bestFeat = feat;
+			bestLeftChild = leftChildSamples;
+			bestRightChild = rightChildSamples;
+			bestLeftProbs = leftProbs;
+			bestRightProbs = rightProbs;
 		}
-		
 	}
-	if (tBestInfoGain > bestInfoGain)
+	
+	if (bestLeftChild.size() == 0 or bestRightChild.size()==0 or bestInfoGain<0)
 	{
-		bestInfoGain = tBestInfoGain;
-		bestLeftGini = tBestLeftGini;
-		bestRightGini = tBestRightGini;
-		bestLeftChild = tBestLeftChild;
-		bestRightChild = tBestRightchild;
-		bestFeat = tBestFeat;
-		bestLeftProbs = tBestLeftProbs;
-		bestRightProbs = tBestRightProbs;
-	}
-
-	if (bestInfoGain < thresh)
-	{
-		createLeaf();
+		createLeaf(nodes[0]->_probs);
 	}
 	else
 	{
@@ -160,11 +133,16 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId, float thresh)
 }
 
 // make the most frequent class as the class of this leaf node
-void Node::createLeaf()
+void Node::createLeaf(std::vector<float> priorDistr)
 {
 	_class = 0;
+	int numClasses = _samples->getNumClasses();
+	for (int i = 0; i < numClasses; ++i)
+	{
+		_probs[i] = _probs[i] / priorDistr[i] / numClasses;
+	}
 	_prob = _probs[0];
-	for (int i = 1; i < _samples->getNumClasses(); ++i)
+	for (int i = 1; i < numClasses; ++i)
 	{
 		if (_probs[i] > _prob)
 		{
@@ -178,16 +156,11 @@ void Node::createLeaf()
 
 bool Node::isHomogenous(){
 	int numSamples = _samples->getSelectedSamplesId().size();
-	for (int i = 0; i < numSamples-1; ++i)
+	int pointId1 = _samples->getSelectedSamplesId()[0];
+	for (int i = 1; i < numSamples - 1; ++i)
 	{
-		int pointId1 = _samples->getSelectedSamplesId()[i];
-		int pointId2 = _samples->getSelectedSamplesId()[i+1];
-
-		if ((*(_samples->_labels))[pointId1] !=
-			(*(_samples->_labels))[pointId2])
-		{
+		if (_samples->getSelectedSamplesId()[i] != pointId1)
 			return false;
-		}
 	}
 	return true;
 }

@@ -20,15 +20,16 @@ public:
 	// info gain is defined as:
 	// gini_of_node - left_child_proportion*left_child_gini - right_child_proportion*
 	// right_child_gini
-	void computeInfoGain(std::vector<Node*>& nodes, int nodeId, float threshGini);
+	void computeInfoGain(std::vector<Node*>& nodes, int nodeId);
 	// compute the Gini Index at this node
 	void computeNodeGini();
 	// compute the Gini Index given the class label vector and returns a class 
 	// distribution
 	float computeGini(std::vector<int> & labelVec, std::vector<float> &probs);
 
+	std::vector<float> computeSampleDistribution();
 	// create a leaf node
-	void createLeaf();
+	void createLeaf(std::vector<float> priorDistr);
 
 	// to tell if the samples at this node belong to the same class in which 
 	// case the splitting will terminate and a node is set as a leaf node

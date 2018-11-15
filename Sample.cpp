@@ -2,6 +2,7 @@
 #include <ctime>
 #include <iostream>
 #include "FeatureFactory.h"
+#include "utils.h"
 
 Sample::Sample(Eigen::MatrixXf *dataset, Eigen::VectorXi *labels, 
 			   Eigen::MatrixXi *indexMat, Eigen::MatrixXf *distMat, int numClass, int numFeature):
@@ -46,7 +47,9 @@ void Sample::randomSampleDataset(Eigen::VectorXi &selectedSamplesId, int numSele
 
 	// to generate a uniform distribution and sample with replacement
 	std::default_random_engine generator;
-	generator.seed(time(NULL));
+	//generator.seed(time(NULL));
+	//DEBUG to uncomment
+	generator.seed(12345);
 	std::uniform_int_distribution<int> distribution(0, numTotalSamples - 1);
 
 	for (int i = 0; i < _numSelectedSamples; ++i)

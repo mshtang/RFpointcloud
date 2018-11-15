@@ -58,7 +58,7 @@ void RandomForest::train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, Eig
 	// initializing the trees
 	for (int i = 0; i < _numTrees; ++i)
 	{
-		_forest[i] = new Tree(_maxDepth, _numFeatsPerNode, _minSamplesPerLeaf, _giniThresh);
+		_forest[i] = new Tree(_maxDepth, _numFeatsPerNode, _minSamplesPerLeaf);
 	}
 
 	// this object holds the whole training dataset

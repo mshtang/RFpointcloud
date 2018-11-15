@@ -17,7 +17,7 @@ class Tree
 {
 public:
 
-	Tree(int maxDepth, int numFeatPerNode, int minNumSamplesPerLeaf, float giniThresh);
+	Tree(int maxDepth, int numFeatPerNode, int minNumSamplesPerLeaf);
 	
 	void train(Sample *sample);
 	
@@ -34,6 +34,5 @@ private:
 	int _numNodes; // number of nodes = 2^_maxDepth - 1;
 	int _minNumSamplesPerLeaf;
 	int _numFeatPerNode;
-	float _giniThresh;
 	std::vector<Node*> _treeNodes;
 };

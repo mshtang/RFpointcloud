@@ -1,10 +1,9 @@
 #include "Tree.h"
 
-Tree::Tree(int maxDepth, int numFeatPerNode, int minNumSamplesPerLeaf, float giniThresh):
+Tree::Tree(int maxDepth, int numFeatPerNode, int minNumSamplesPerLeaf):
 	_maxDepth(maxDepth),
 	_numFeatPerNode(numFeatPerNode),
 	_minNumSamplesPerLeaf(minNumSamplesPerLeaf),
-	_giniThresh(giniThresh),
 	_numNodes(static_cast<int>(std::pow(2, _maxDepth)-1)),
 	_treeNodes(_numNodes, nullptr)
 {
@@ -19,8 +18,10 @@ void Tree::train(Sample *sample)
 	Sample *nodeSample = new Sample(sample, selectedSamplesId);
 	_treeNodes[0] = new Node();
 	_treeNodes[0]->_samples = nodeSample;
+	std::vector<float> priorDistr;
 	// calculate the probability and gini
 	_treeNodes[0]->computeNodeGini();
+	priorDistr = _treeNodes[0]->_probs;
 	for (int i = 0; i < _numNodes; ++i)
 	{
 		int parentId = (i - 1) / 2;
@@ -33,7 +34,7 @@ void Tree::train(Sample *sample)
 		// if maxDepth is reached, set current node as a leaf node
 		if (i * 2 + 1 >= _numNodes)
 		{
-			_treeNodes[i]->createLeaf();
+			_treeNodes[i]->createLeaf(priorDistr);
 			continue;
 		}
 		// if current samples in this node is less than the threshold
@@ -41,11 +42,11 @@ void Tree::train(Sample *sample)
 		if ((_treeNodes[i]->_samples->getNumSelectedSamples() <= _minNumSamplesPerLeaf) or
 			_treeNodes[i]->isHomogenous())
 		{
-			_treeNodes[i]->createLeaf();
+			_treeNodes[i]->createLeaf(priorDistr);
 			continue;
 		}
 		//_treeNodes[i]->_samples->randomSampleFeatures();
-		_treeNodes[i]->computeInfoGain(_treeNodes, i, _giniThresh);
+		_treeNodes[i]->computeInfoGain(_treeNodes, i);
 	}
 }
 
@@ -59,6 +60,8 @@ void Tree::createLeaf(int nodeId, int classLabel, float prob)
 
 std::vector<float> Tree::predict(Eigen::MatrixXf &testNeigh)
 {
+	// starting from the 0th node
+	// do a recursive breadth first search in searchNode()
 	int nodeId = 0;
 	nodeId = searchNode(testNeigh, 0);
 	return _treeNodes[nodeId]->_probs;
