@@ -14,11 +14,10 @@ public:
 	numTrees: number of trees in this forest
 	maxDepth: the max possible depth of each tree
 	minSamplesPerLeaf: set the terminating condition for growing a tree
-	giniThresh: the threshold at which a bag of samples should be split up
 	**************************************************************/
-	RandomForest(int numTrees, int maxDepth, int minSamplesPerLeaf,
-				 float giniThresh);
+	RandomForest(int numTrees, int maxDepth, int minSamplesPerLeaf);
 	
+	RandomForest(const char* modelPath);
 	~RandomForest();
 
 	/***************************************************************
@@ -43,6 +42,11 @@ public:
 	void predict(const char* testDataPath, Eigen::VectorXi &predictedLabels);
 	int predict(Eigen::MatrixXf &testNeigh);
 
+	void saveModel(const char* path);
+	void readModel(const char* path);
+
+	void setTrainSample(Sample* trainsample) { _trainSample = trainsample; }
+
 private:
 	//the feature number used in a node while training (stop criterion)
 	int _numFeatsPerNode;  
@@ -53,8 +57,7 @@ private:
 	int _numClasses;  
 	//terminate condition the min samples at a node (stop criterion)
 	int _minSamplesPerLeaf;  
-	//terminate condition the min information gain in a node
-	float _giniThresh; 
+
 	std::vector<Tree*> _forest;
 	//hold the whole dataset and some other infomation
 	Sample *_trainSample;  

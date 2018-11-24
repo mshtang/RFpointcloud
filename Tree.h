@@ -26,6 +26,8 @@ public:
 	inline std::vector<Node*> getTreeNodes() { return _treeNodes; }
 
 	void createLeaf(int nodeId, int classLabel, float prob);
+
+	void createNode(int nodeId, Features bestFeat);
 	
 	int searchNode(Eigen::MatrixXf & testNeigh, int nodeId);
 

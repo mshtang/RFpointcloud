@@ -90,11 +90,17 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 				rightChildSamples.push_back(sampleId[j]);
 		}
 		
+		if (leftChildSamples.size() == 0 or rightChildSamples.size() == 0)
+		{
+			continue;
+		}
+
 		leftGini = computeGini(leftChildSamples, leftProbs);
 		rightGini = computeGini(rightChildSamples, rightProbs);
 		float leftRatio = leftChildSamples.size() / (float)numSamples;
 		float rightRatio = rightChildSamples.size() / (float)numSamples;
 		infoGain = _gini - leftGini * leftRatio - rightGini * rightRatio;
+
 		if (infoGain > bestInfoGain)
 		{
 			bestInfoGain = infoGain;
@@ -137,10 +143,22 @@ void Node::createLeaf(std::vector<float> priorDistr)
 {
 	_class = 0;
 	int numClasses = _samples->getNumClasses();
+	int nullClasses = 0; // classes have no instances
 	for (int i = 0; i < numClasses; ++i)
 	{
-		_probs[i] = _probs[i] / priorDistr[i] / numClasses;
+		if (priorDistr[i] == 0)
+		{
+			_probs[i] = 0;
+			nullClasses++;
+		}
+		else
+			_probs[i] = _probs[i] / priorDistr[i];
 	}
+	for (int i = 0; i < numClasses; ++i)
+	{
+		_probs[i] /= (numClasses - nullClasses);
+	}
+	
 	_prob = _probs[0];
 	for (int i = 1; i < numClasses; ++i)
 	{

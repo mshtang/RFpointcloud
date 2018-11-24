@@ -80,3 +80,10 @@ int Tree::searchNode(Eigen::MatrixXf &testNeigh, int nodeId)
 			return searchNode(testNeigh, nodeId * 2 + 2);
 	}
 }
+
+void Tree::createNode(int nodeId, Features bestFeat)
+{
+	_treeNodes[nodeId] = new Node();
+	_treeNodes[nodeId]->setLeaf(false);
+	_treeNodes[nodeId]->setBestFeature(bestFeat);
+}

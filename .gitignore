@@ -1,6 +1,7 @@
 .vscode/
 Debug/
 test/
+models/
 toy_dataset/
 datasets/
 mtTest.vcxproj

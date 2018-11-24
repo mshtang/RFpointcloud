@@ -27,7 +27,6 @@ public:
 	// distribution
 	float computeGini(std::vector<int> & labelVec, std::vector<float> &probs);
 
-	std::vector<float> computeSampleDistribution();
 	// create a leaf node
 	void createLeaf(std::vector<float> priorDistr);
 
@@ -41,9 +40,13 @@ public:
 	// some setters/getters
 	inline bool isLeaf() { return _isLeaf; }
 	inline void setLeaf(bool flag) { _isLeaf = flag; }
+	inline int getClass() { return _class; }
 	inline void setClass(int classLabel) { _class = classLabel; }
+	inline float getProb() { return _prob; }
 	inline void setProb(float prob) { _prob = prob; }
+	inline void setBestFeature(Features bestFeat) { _bestFeat = bestFeat; }
 	inline Features getBestFeature() { return _bestFeat; }
+
 	
 	float _gini;
 	std::vector<float> _probs;

@@ -84,7 +84,7 @@ public:
 	 * whose shape is (k, d), where k is the number of nearest neighbors
 	 * and d is the dimention of each datapoint*
 	 **************************************************************************************/
-	Eigen::MatrixXf buildNeighborhood(int pointId) const;
+	Eigen::MatrixXf buildNeighborhood(int pointId);
 
 	// keep track of the number of different classes in a Sample obejct
 	inline int getNumClasses() { return _numClass; }
@@ -147,10 +147,10 @@ public:
 		candidates(population);
 
 		std::random_device rd;
-		// std::mt19937 gen(rd());
+		std::mt19937 gen(rd());
 		// DEBUG to uncomment
 		// for debugging purposes, to generate deterministic numbers
-		std::mt19937 gen(123);
+		// std::mt19937 gen(123);
 		std::shuffle(population.begin(), population.end(), gen);
 		std::vector<int> samples(population.begin(), population.begin() + _sampleSize);
 		return samples;

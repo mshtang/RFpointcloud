@@ -6,24 +6,30 @@
 #include "Node.h"
 #include "Forest.h"
 #include "utils.h"
+#include <chrono>
 
 int main(int argc, char** argv)
 {
 	// prepare dataset
 	// instantiate a training object
 	InOut trnObj;
-	Eigen::MatrixXf trnData;
-	Eigen::VectorXi trnLabels;
+	Eigen::MatrixXf cloud;
+	//Eigen::MatrixXf points;
+	Eigen::VectorXi cloudLabels;
+	//Eigen::VectorXi pointLabels;
 
-	trnObj.readPoints("./dataset/downsampled.txt", trnData);
-	trnObj.readLabels("./dataset/downsampled.labels", trnLabels);
+	//trnObj.readPoints("./datasets/bildstein_station1_xyz_intensity_rgb_trainData.txt", cloud);
+	trnObj.readPoints("./toy_dataset/downsampled.txt", cloud);
+	//trnObj.readLabels("./datasets/bildstein_station1_xyz_intensity_rgb_train.labels", cloudLabels);
+	trnObj.readLabels("./toy_dataset/downsampled.labels", cloudLabels);
 
 	// search for the k nearest neighbors for each point in the dataset
 	// and store the indices and dists in two matrices for later use by
 	// indexing instead of searching again
+
 	Eigen::MatrixXi trnIndices;
 	Eigen::MatrixXf trnDists;
-	trnObj.searchNN(trnData, trnIndices, trnDists);
+	trnObj.searchNN(cloud, trnIndices, trnDists);
 
 	/*Sample trnSamples(&trnData, &trnLabels, &trnIndices, &trnDists, 8, 1);
 	Eigen::MatrixXf local_nei = trnSamples.buildNeighborhood(0);
@@ -49,19 +55,37 @@ int main(int argc, char** argv)
 		std::cout << i.transpose() << std::endl << std::endl;
 	 ff.computeFeature();*/
 
-	int numTrees = 1;
-	int maxDepths = 3;
+	int numTrees = 3;
+	int maxDepths = 5;
 	int minSamplesPerLeaf = 20;
-	float infoGainThresh = 0;
-	RandomForest rf(numTrees, maxDepths, minSamplesPerLeaf, infoGainThresh);
-	int numClasses = 9;
-	int featsPerNode = 10;
-	rf.train(&trnData, &trnLabels, &trnIndices, &trnDists, numClasses, featsPerNode);
+	//RandomForest rf(numTrees, maxDepths, minSamplesPerLeaf);
+	int numClasses = 8;
+	int featsPerNode = 5;
 
+	/*auto start = std::chrono::system_clock::now();
+	rf.train(&cloud, &cloudLabels, &trnIndices, &trnDists, numClasses, featsPerNode);
+	auto end = std::chrono::system_clock::now();
+	double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+	std::cout << "Training takes: " << elapsed << "s" << std::endl;
+	
+	rf.saveModel("./models/test.model");*/
 
+	RandomForest rf("./models/test.model");
+	
+	
 	Eigen::VectorXi predictedLabels;
-	rf.predict("./dataset/testset.txt", predictedLabels);
-	std::cout << predictedLabels << std::endl;
+
+	auto start = std::chrono::system_clock::now();
+	//rf.predict("./datasets/bildstein_station1_xyz_intensity_rgb_valData.txt", predictedLabels);
+	rf.predict("./toy_dataset/testset.txt", predictedLabels);
+	auto end = std::chrono::system_clock::now();
+
+	auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+	std::cout << "Predicting takes: " << elapsed << "s" << std::endl;
+	
+	//std::cout << predictedLabels << std::endl;
+	//trnObj.writeToDisk("./datasets/predict.labels", predictedLabels);
+	trnObj.writeToDisk("./toy_dataset/predict_from_direct.labels", predictedLabels);
 	system("pause");
 	return 0;
 }
