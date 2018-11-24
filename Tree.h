@@ -25,7 +25,7 @@ public:
 	
 	inline std::vector<Node*> getTreeNodes() { return _treeNodes; }
 
-	void createLeaf(int nodeId, int classLabel, float prob);
+	void createLeaf(int nodeId, int classLabel, float prob, std::vector<float> probs);
 
 	void createNode(int nodeId, Features bestFeat);
 	

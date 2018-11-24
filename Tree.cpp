@@ -50,12 +50,13 @@ void Tree::train(Sample *sample)
 	}
 }
 
-void Tree::createLeaf(int nodeId, int classLabel, float prob)
+void Tree::createLeaf(int nodeId, int classLabel, float prob, std::vector<float> probs)
 {
 	_treeNodes[nodeId] = new Node();
 	_treeNodes[nodeId]->setLeaf(true);
 	_treeNodes[nodeId]->setClass(classLabel);
 	_treeNodes[nodeId]->setProb(prob);
+	_treeNodes[nodeId]->_probs = probs;
 }
 
 std::vector<float> Tree::predict(Eigen::MatrixXf &testNeigh)

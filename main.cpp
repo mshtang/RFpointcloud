@@ -54,7 +54,7 @@ int main(int argc, char** argv)
 	for (auto i : eigv)
 		std::cout << i.transpose() << std::endl << std::endl;
 	 ff.computeFeature();*/
-
+	
 	int numTrees = 3;
 	int maxDepths = 5;
 	int minSamplesPerLeaf = 20;
@@ -75,17 +75,16 @@ int main(int argc, char** argv)
 	
 	Eigen::VectorXi predictedLabels;
 
-	auto start = std::chrono::system_clock::now();
+	auto start2 = std::chrono::system_clock::now();
 	//rf.predict("./datasets/bildstein_station1_xyz_intensity_rgb_valData.txt", predictedLabels);
 	rf.predict("./toy_dataset/testset.txt", predictedLabels);
-	auto end = std::chrono::system_clock::now();
+	auto end2 = std::chrono::system_clock::now();
 
-	auto elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
-	std::cout << "Predicting takes: " << elapsed << "s" << std::endl;
+	auto elapsed2 = std::chrono::duration_cast<std::chrono::duration<double>>(end2 - start2).count();
+	std::cout << "Predicting takes: " << elapsed2 << "s" << std::endl;
 	
-	//std::cout << predictedLabels << std::endl;
 	//trnObj.writeToDisk("./datasets/predict.labels", predictedLabels);
-	trnObj.writeToDisk("./toy_dataset/predict_from_direct.labels", predictedLabels);
+	trnObj.writeToDisk("./toy_dataset/predict_from_restore.labels", predictedLabels);
 	system("pause");
 	return 0;
 }

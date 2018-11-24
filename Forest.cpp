@@ -293,8 +293,7 @@ void RandomForest::readModel(const char* path)
 					fread(&tmpProb, sizeof(float), 1, modelFile);
 					probs[k] = tmpProb;
 				}
-				_forest[i]->getTreeNodes()[j]->_probs = probs;
-				_forest[i]->createLeaf(j, clas, prob);
+				_forest[i]->createLeaf(j, clas, prob, probs);
 			}
 		}
 	}
