@@ -1,5 +1,6 @@
 .vscode/
 Debug/
+Release/
 test/
 models/
 toy_dataset/
