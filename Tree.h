@@ -17,7 +17,7 @@ class Tree
 {
 public:
 
-	Tree(int maxDepth, int numFeatPerNode, int minNumSamplesPerLeaf, float giniThresh);
+	Tree(int maxDepth, int numFeatPerNode, int minNumSamplesPerLeaf);
 	
 	void train(Sample *sample);
 	
@@ -25,7 +25,9 @@ public:
 	
 	inline std::vector<Node*> getTreeNodes() { return _treeNodes; }
 
-	void createLeaf(int nodeId, int classLabel, float prob);
+	void createLeaf(int nodeId, int classLabel, float prob, std::vector<float> probs);
+
+	void createNode(int nodeId, Features bestFeat);
 	
 	int searchNode(Eigen::MatrixXf & testNeigh, int nodeId);
 
@@ -34,6 +36,5 @@ private:
 	int _numNodes; // number of nodes = 2^_maxDepth - 1;
 	int _minNumSamplesPerLeaf;
 	int _numFeatPerNode;
-	float _giniThresh;
 	std::vector<Node*> _treeNodes;
 };

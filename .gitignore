@@ -1,5 +1,10 @@
+.vscode/
 Debug/
+Release/
 test/
+models/
+toy_dataset/
+datasets/
 mtTest.vcxproj
 mtTest.vcxproj.filters
 mtTest.vcxproj.user
