@@ -81,6 +81,10 @@ void RandomForest::train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, Eig
 		sample->randomSampleDataset(selectedSamplesId, _numSelectedSamples);
 		
 		_forest[i]->train(sample);
+
+		std::vector<Node*> nodes = _forest[i]->getTreeNodes();
+		_forest[i]->computeStats(nodes);
+
 		delete sample;
 	}
 }
@@ -138,10 +142,13 @@ int RandomForest::predict(Eigen::MatrixXf &testNeigh)
 	return label;
 }
 
-void RandomForest::saveModel(const char* path)
+void RandomForest::saveModel(const char* path, const char* statFilePath)
 {
 	printf("Saving model ... ");
 	FILE *saveFile = fopen(path, "wb");
+	FILE *statFile = nullptr;
+	if (statFilePath != nullptr)
+		statFile = fopen(statFilePath, "w");
 	fwrite(&_numTrees, sizeof(int), 1, saveFile);
 	fwrite(&_maxDepth, sizeof(int), 1, saveFile);
 	fwrite(&_numClasses, sizeof(int), 1, saveFile);
@@ -149,6 +156,35 @@ void RandomForest::saveModel(const char* path)
 	int isLeaf = 0;
 	for (int i = 0; i < _numTrees; ++i)
 	{
+		// write some statistics to file
+		if (statFilePath != nullptr)
+		{
+			fprintf(statFile, "----------------------------------Stats for Tree %d-----------------------------:\n", i);
+			int totalNum = _forest[i]->getTotalNumSamples();
+			fprintf(statFile, "%d samples are trained in this tree.\n", totalNum);
+			float balance = _forest[i]->getBalance();
+			fprintf(statFile, "Tree balance is: %.3f\n", balance);
+			int numSamplesInLargestLeaf = _forest[i]->getNumSamplesInLargestLeaf();
+			fprintf(statFile, "The number of samples in the largest leaf: %d\n", numSamplesInLargestLeaf);
+			float gradeSorting = _forest[i]->getSortingGrade();
+			fprintf(statFile, "Grade of sorting is: %.3f\n", gradeSorting);
+			float largestLeafGini = _forest[i]->getLargestLeafGini();
+			fprintf(statFile, "Gini of the largest leaf node: %.3f\n", largestLeafGini);
+			std::vector<float> largestLeafDistr = _forest[i]->getLargestLeafDistr();
+			fprintf(statFile, "The posterior of the largest leaf node: \n");
+			for (int k = 0; k < largestLeafDistr.size(); ++k)
+			{
+				fprintf(statFile, "%.3f   ", largestLeafDistr[k]);
+			}
+			std::vector<float> bestFeatTypeDistr = _forest[i]->getBestFeatTypeDistr();
+			fprintf(statFile, "\nThe posterior of the projection type of the selected best feature at each node:\n");
+			for (int k = 0; k < bestFeatTypeDistr.size(); ++k)
+			{
+				fprintf(statFile, "%.3f   ", bestFeatTypeDistr[k]);
+			}
+			fprintf(statFile, "\n");
+		}
+
 		std::vector<Node*> arr = _forest[i]->getTreeNodes();
 		isLeaf = 0;
 		for (int j = 0; j < numNodes; ++j)
@@ -198,11 +234,11 @@ void RandomForest::saveModel(const char* path)
 						int voxelSize = bestFeat._voxelSize[k];
 						fwrite(&voxelSize, sizeof(int), 1, saveFile);
 					}
-					//fwrite(&bestFeat, sizeof(Features), 1, saveFile);
 				}
 			}
 		}
 	}
+	fclose(statFile);
 	fclose(saveFile);
 	printf("Model saved!\n");
 }

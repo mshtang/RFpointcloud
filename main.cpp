@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 	// change here to enter debug mode
 	bool debug = true;
 	// to control whether training from scratch or use a pretrained model
-	bool directTrain = false;
+	bool directTrain = true;
 
 	// give respective dataset/label path
 	std::string trainSetPath = "./datasets/path_to_trainset.txt";
@@ -21,6 +21,9 @@ int main(int argc, char **argv)
 	std::string valLabelPath = "./datasets/path_to_val.labels";
 	// if training the real dataset, give a path to save the model
 	std::string modelPath = "./models/path_to_the_real_model.model";
+	// statistics file of the model
+	std::string statsPath = "./models/stats.txt";
+
 	// parameters to modify
 	int numTrees = 10;
 	int maxDepth = 10;
@@ -33,7 +36,7 @@ int main(int argc, char **argv)
 		trainSetPath = "./toy_dataset/downsampled.txt";
 		trainLabelPath = "./toy_dataset/downsampled.labels";
 		valSetPath = "./toy_dataset/testset.txt";
-		valLabelPath = "./toy_dataset/testset_from_model.labels";
+		valLabelPath = "./toy_dataset/testset.labels";
 		numTrees = 2;
 		maxDepth = 5;
 		minSamplesPerLeaf = 20;
@@ -67,7 +70,7 @@ int main(int argc, char **argv)
 		auto end = std::chrono::system_clock::now();
 		double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
 		std::cout << "Training takes: " << elapsed << "s" << std::endl;
-		randObj.saveModel(modelPath.c_str());
+		randObj.saveModel(modelPath.c_str(), statsPath.c_str());
 
 		start = std::chrono::system_clock::now();
 		randObj.predict(valSetPath.c_str(), predictedLabels);

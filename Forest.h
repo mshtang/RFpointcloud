@@ -42,7 +42,7 @@ public:
 	void predict(const char* testDataPath, Eigen::VectorXi &predictedLabels);
 	int predict(Eigen::MatrixXf &testNeigh);
 
-	void saveModel(const char* path);
+	void saveModel(const char* path, const char* statFilePath=nullptr);
 	void readModel(const char* path);
 
 	void setTrainSample(Sample* trainsample) { _trainSample = trainsample; }

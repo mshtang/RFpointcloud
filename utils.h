@@ -17,6 +17,12 @@ inline std::vector<int> toStdVec(Eigen::VectorXi eigVec)
 	return stdVec;
 }
 
+inline std::vector<float> toStdVec(Eigen::VectorXf eigVec)
+{
+	std::vector<float> stdVec(&eigVec[0], eigVec.data() + eigVec.size());
+	return stdVec;
+}
+
 
 //// convert std::vector to Eigen::VectorX
 //template <typename _Scalar>
