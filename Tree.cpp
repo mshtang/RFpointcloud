@@ -1,4 +1,5 @@
 #include "Tree.h"
+#include "utils.h"
 
 Tree::Tree(int maxDepth, int numFeatPerNode, int minNumSamplesPerLeaf):
 	_maxDepth(maxDepth),
@@ -88,3 +89,47 @@ void Tree::createNode(int nodeId, Features bestFeat)
 	_treeNodes[nodeId]->setLeaf(false);
 	_treeNodes[nodeId]->setBestFeature(bestFeat);
 }
+
+void Tree::computeStats(std::vector<Node*> nodes)
+{
+	int nonNull = 0;
+	int largestLeaf = 0;
+	int largestLeafId = 0;
+	int nonLeaf = 0;
+	_bestFeatTypeDistr.resize(FeatureFactory::numOfPossibleProjections, 0);
+	for (int i = 0; i < nodes.size(); ++i)
+	{
+		if (nodes[i] != nullptr)
+		{
+			nonNull++;
+			if (nodes[i]->isLeaf())
+			{
+				int samplesInNode = nodes[i]->_samples->getNumSelectedSamples();
+				if (samplesInNode > largestLeaf)
+				{
+					largestLeaf = samplesInNode;
+					largestLeafId = i;
+				}
+			}
+			else
+			{
+				nonLeaf++;
+				int featType = nodes[i]->getBestFeature()._featType;
+				_bestFeatTypeDistr[featType]++;
+			}
+		}
+	}
+	_balance = nonNull / static_cast<float>(nodes.size());
+	_totalNumSamples = nodes[0]->_samples->getNumSelectedSamples();
+	_numSamplesInLargestLeaf = largestLeaf;
+	_gradeSorting = 1 - largestLeaf / static_cast<float>(_totalNumSamples);
+	Node* node = nodes[largestLeafId];
+	Eigen::VectorXi ids = node->_samples->getSelectedSamplesId();
+	std::vector<int> idsVec = toStdVec(ids);
+	_largestLeafGini = node->computeGini(idsVec, _largestLeafDistr);
+	for (int i = 0; i < _bestFeatTypeDistr.size(); ++i)
+	{
+		_bestFeatTypeDistr[i] /= nonLeaf;
+	}
+}
+

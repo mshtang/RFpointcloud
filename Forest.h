@@ -31,8 +31,10 @@ public:
 	at each node is huge, so only a small fraction of that is used to limit
 	the computational effort
 	**************************************************************/
-	void train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, Eigen::MatrixXi *indices,
-			   Eigen::MatrixXf *dists, int numClasses, int numFeatsPerNode);
+	void train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, 
+			   Eigen::MatrixXi *indices, Eigen::MatrixXf *dists, 
+			   int numClasses, int numFeatsPerNode,
+			   Eigen::MatrixXf *cloud, Eigen::VectorXi *truths);
 	
 	/***************************************************************************
 	 * pass in the file path to the test dataset. within this method, an InOut
@@ -42,7 +44,7 @@ public:
 	void predict(const char* testDataPath, Eigen::VectorXi &predictedLabels);
 	int predict(Eigen::MatrixXf &testNeigh);
 
-	void saveModel(const char* path);
+	void saveModel(const char* path, const char* statFilePath=nullptr);
 	void readModel(const char* path);
 
 	void setTrainSample(Sample* trainsample) { _trainSample = trainsample; }

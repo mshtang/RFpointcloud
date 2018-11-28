@@ -4,9 +4,11 @@
 #include <fstream>
 #include "InOut.h"
 #include "nanoflann.hpp"
+#include <chrono>
 
 void InOut::readPoints(const char* filename, Eigen::MatrixXf &cloud)
 {
+	std::cout << "Reading points ... ";
 	// open file
 	std::fstream ifs(filename);
 	if (!ifs.is_open())
@@ -47,7 +49,7 @@ void InOut::readPoints(const char* filename, Eigen::MatrixXf &cloud)
 		cloud(i, 6) = (*p).at(6);
 	}
 
-	std::cout << numPoints << " points read." << std::endl;
+	std::cout << "Done! " << numPoints << " points read." << std::endl;
 }
 
 void InOut::readLabels(const char* filename, Eigen::VectorXi &labels) {
@@ -78,53 +80,22 @@ void InOut::readLabels(const char* filename, Eigen::VectorXi &labels) {
 
 void InOut::searchNN(const Eigen::MatrixXf & cloud, Eigen::MatrixXi &indices, Eigen::MatrixXf &dists)
 {
-	int k1 = numOfNN+1;
-	// Eigen::MatrixXf uses colMajor as default
-	// copy the coords to a RowMajor matrix and search in this matrix
-	// the nearest points for each datapoint
-	typedef Eigen::Matrix<float, Eigen::Dynamic, 3, Eigen::RowMajor> Matrix3fRow;
-	Matrix3fRow coords = cloud.leftCols(3);
-	
-	// different max_leaf values only affect the search speed 
-	// and any value between 10 - 50 is reasonable
-	const int max_leaf = 10;
-	nanoflann::KDTreeEigenMatrixAdaptor<Matrix3fRow> mat_index(coords, max_leaf);
-	mat_index.index->buildIndex();
-	/*Eigen::MatrixXi ret_indices_mat(cloud.rows(), k);
-	Eigen::MatrixXf ret_dists_mat(cloud.rows(), k);*/
-	indices.resize(cloud.rows(), k1);
-	dists.resize(cloud.rows(), k1);
-	// do a knn search
-	for (int i = 0; i < coords.rows(); ++i) 
-	{
-		// coords is RowMajor so coords.data()[i*3+0 / +1  / +2] represents the ith row of coords
-		std::vector<float> query_pt{ coords.data()[i * 3 + 0], coords.data()[i * 3 + 1], coords.data()[i * 3 + 2] };
-		
-		std::vector<size_t> ret_indices(k1);
-		std::vector<float> out_dists_sqr(k1);
-		nanoflann::KNNResultSet<float> resultSet(k1);
-		resultSet.init(&ret_indices[0], &out_dists_sqr[0]);
-		mat_index.index->findNeighbors(resultSet, &query_pt[0], nanoflann::SearchParams(10));
-		for (size_t j = 0; j < k1; ++j) 
-		{
-			indices(i, j) = ret_indices[j];
-			dists(i, j) = std::sqrt(out_dists_sqr[j]);
-		}
-	}
-	std::cout << "Searching for knn finished. " << std::endl;
+	Eigen::MatrixXf dataset(cloud);
+	searchNN(cloud, dataset, indices, dists);
 }
 
-
-void InOut::searchNN(const Eigen::MatrixXf &cloud, const Eigen::MatrixXf &points, Eigen::MatrixXi &indices, Eigen::MatrixXf &dists)
+void InOut::searchNN(const Eigen::MatrixXf &cloud, const Eigen::MatrixXf &dataset, Eigen::MatrixXi &indices, Eigen::MatrixXf &dists)
 {
+	std::cout << "Searching kNN starts ... ";
 	int k1 = numOfNN+1;
 	// Eigen::MatrixXf uses colMajor as default
 	// copy the coords to a RowMajor matrix and search in this matrix
 	// the nearest points for each datapoint
 	typedef Eigen::Matrix<float, Eigen::Dynamic, 3, Eigen::RowMajor> Matrix3fRow;
 	Matrix3fRow coords = cloud.leftCols(3);
-	Matrix3fRow pointCoords = points.leftCols(3);
+	Matrix3fRow pointCoords = dataset.leftCols(3);
 
+	auto start = std::chrono::system_clock::now();
 	// different max_leaf values only affect the search speed 
 	// and any value between 10 - 50 is reasonable
 	const int max_leaf = 10;
@@ -151,7 +122,9 @@ void InOut::searchNN(const Eigen::MatrixXf &cloud, const Eigen::MatrixXf &points
 			dists(i, j) = std::sqrt(out_dists_sqr[j]);
 		}
 	}
-	std::cout << "Searching for knn finished. " << std::endl;
+	auto end = std::chrono::system_clock::now();
+	double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+	std::cout << " Finished! in " << elapsed << "s." << std::endl;
 }
 
 

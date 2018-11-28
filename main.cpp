@@ -1,10 +1,10 @@
 #include <iostream>
 #include "InOut.h"
 #include "Sample.h"
-#include "FeatureFactory.h"
-#include "Node.h"
+//#include "FeatureFactory.h"
+//#include "Node.h"
 #include "Forest.h"
-#include "utils.h"
+//#include "utils.h"
 #include <chrono>
 
 int main(int argc, char **argv)
@@ -19,8 +19,13 @@ int main(int argc, char **argv)
 	std::string valSetPath = "./datasets/path_to_valset.txt";
 	std::string trainLabelPath = "./datasets/path_to_train.labels";
 	std::string valLabelPath = "./datasets/path_to_val.labels";
+	std::string cloudPath = "./datasets/path_to_original_cloud.txt";
+	std::string truthPath = "./datasets/path_to_ground_truth.labels";
 	// if training the real dataset, give a path to save the model
 	std::string modelPath = "./models/path_to_the_real_model.model";
+	// statistics file of the model
+	std::string statsPath = "./models/stats.txt";
+
 	// parameters to modify
 	int numTrees = 10;
 	int maxDepth = 10;
@@ -33,41 +38,69 @@ int main(int argc, char **argv)
 		trainSetPath = "./toy_dataset/downsampled.txt";
 		trainLabelPath = "./toy_dataset/downsampled.labels";
 		valSetPath = "./toy_dataset/testset.txt";
-		valLabelPath = "./toy_dataset/testset_from_model.labels";
-		numTrees = 2;
-		maxDepth = 5;
+		valLabelPath = "./toy_dataset/testset_restoring.labels";
+		cloudPath = "./datasets/bildstein_station1_xyz_intensity_rgb_valData.txt";
+		truthPath = "./datasets/bildstein_station1_xyz_intensity_rgb_val.labels";
+		numTrees = 1;
+		maxDepth = 3;
 		minSamplesPerLeaf = 20;
-		featsPerNode = 5;
+		featsPerNode = 2;
 	}
 
 	// in this work it's 8
 	int numClasses = 8;
+	/*InOut devObj;
+	Eigen::MatrixXf cloud;
+	Eigen::VectorXi truths;
+	Eigen::MatrixXf dataset;
+	Eigen::VectorXi labels;
+	Eigen::MatrixXi trainIndex;
+	Eigen::MatrixXf trainDists;
+	
+	devObj.readPoints(, cloud);
+	devObj.readLabels(, truths);
+	devObj.readPoints("./toy_dataset/downsampled.txt", dataset);
+	devObj.readLabels("./toy_dataset/downsampled.labels", labels);
+	devObj.searchNN(cloud, dataset, trainIndex, trainDists);
 
+	devObj.writeToDisk("./toy_dataset/index.txt", trainIndex);
+	devObj.writeToDisk("./toy_dataset/dists.txt", trainDists);
+	
+	Sample sample(&dataset, &labels, &trainIndex, &trainDists, numClasses, featsPerNode, &cloud, &truths);
+	sample.buildNeighborhood(0);*/
+	
 
 	if (directTrain)
 	{
 		// prepare dataset
 		InOut trainObj;
 		Eigen::MatrixXf cloud;
-		Eigen::VectorXi labels;
+		Eigen::VectorXi truths;
+		Eigen::MatrixXf trainset;
+		Eigen::VectorXi trainlabels;
 
 		// reading dataset and labels from given file path
-
-		trainObj.readPoints(trainSetPath.c_str(), cloud);
-		trainObj.readLabels(trainLabelPath.c_str(), labels);
+		trainObj.readPoints(cloudPath.c_str(), cloud);
+		trainObj.readLabels(truthPath.c_str(), truths);
+		trainObj.readPoints(trainSetPath.c_str(), trainset);
+		trainObj.readLabels(trainLabelPath.c_str(), trainlabels);
 
 		Eigen::MatrixXi trainIndex;
 		Eigen::MatrixXf trainDists;
 		Eigen::VectorXi predictedLabels;
 
-		trainObj.searchNN(cloud, trainIndex, trainDists);
+		trainObj.searchNN(cloud, trainset, trainIndex, trainDists);
+		//trainObj.writeToDisk("./toy_dataset/trainsetIndex.txt", trainIndex);
+		//trainObj.writeToDisk("./toy_dataset/trainsetDist.txt", trainDists);
+
 		RandomForest randObj(numTrees, maxDepth, minSamplesPerLeaf);
 		auto start = std::chrono::system_clock::now();
-		randObj.train(&cloud, &labels, &trainIndex, &trainDists, numClasses, featsPerNode);
+		randObj.train(&trainset, &trainlabels, &trainIndex, &trainDists, 
+					  numClasses, featsPerNode, &cloud, &truths);
 		auto end = std::chrono::system_clock::now();
 		double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
 		std::cout << "Training takes: " << elapsed << "s" << std::endl;
-		randObj.saveModel(modelPath.c_str());
+		randObj.saveModel(modelPath.c_str(), statsPath.c_str());
 
 		start = std::chrono::system_clock::now();
 		randObj.predict(valSetPath.c_str(), predictedLabels);

@@ -28,7 +28,22 @@ public:
 	void createLeaf(int nodeId, int classLabel, float prob, std::vector<float> probs);
 
 	void createNode(int nodeId, Features bestFeat);
-	
+
+	// the balance of a tree is defined as
+	// B = numOfNonnullNodes/numNodes
+	// the grade of sorting is defined as
+	// S = 1 - numSamplesInLargestLeaf/numSamplesOfDataset
+	// the Gini in the largest leaf node
+	// the posterior distr in the largest leaf node
+	// the selected projection type distribution
+	void computeStats(std::vector<Node*> nodes);
+	float getBalance() { return _balance; }
+	float getSortingGrade() { return _gradeSorting; }
+	float getLargestLeafGini() { return _largestLeafGini; }
+	int getTotalNumSamples() { return _totalNumSamples; }
+	int getNumSamplesInLargestLeaf() { return _numSamplesInLargestLeaf; }
+	std::vector<float> getLargestLeafDistr() { return _largestLeafDistr; }
+	std::vector<float> getBestFeatTypeDistr() { return _bestFeatTypeDistr; }
 	int searchNode(Eigen::MatrixXf & testNeigh, int nodeId);
 
 private:
@@ -37,4 +52,11 @@ private:
 	int _minNumSamplesPerLeaf;
 	int _numFeatPerNode;
 	std::vector<Node*> _treeNodes;
+	float _balance;
+	int _totalNumSamples;
+	int _numSamplesInLargestLeaf;
+	float _gradeSorting;
+	float _largestLeafGini;
+	std::vector<float> _largestLeafDistr;
+	std::vector<float> _bestFeatTypeDistr;
 };
