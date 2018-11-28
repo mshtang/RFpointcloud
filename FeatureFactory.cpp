@@ -45,8 +45,9 @@ void FeatureFactory::localNeighbors()
 		}
 	}
 	// DEBUG to uncomment
-	//std::cout << _localIndices << std::endl;
-	//std::cout << _localDists << std::endl;
+	/*InOut tmp;
+	tmp.writeToDisk("./toy_dataset/localIndex.txt", _localIndices);
+	tmp.writeToDisk("./toy_dataset/localDists.txt", _localDists);*/
 }
 
 void FeatureFactory::buildVoxels()
@@ -340,7 +341,7 @@ bool FeatureFactory::computeFeature()
 				float cha2 = eigv[1].z() / (eigv[1].x() + eigv[1].y() + eigv[1].z());
 				float cha3 = eigv[2].z() / (eigv[2].x() + eigv[2].y() + eigv[2].z());
 				float cha4 = eigv[3].z() / (eigv[3].x() + eigv[3].y() + eigv[3].z());
-				testResult = cha1 < cha2 ? true : false;
+				testResult = (cha1 - cha2)-(cha3-cha4) ? true : false;
 			}
 		}
 	}

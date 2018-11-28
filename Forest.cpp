@@ -29,8 +29,10 @@ RandomForest::~RandomForest()
 	}
 }
 
-void RandomForest::train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, Eigen::MatrixXi *indices,
-						 Eigen::MatrixXf *dists, int numClasses, int numFeatsPerNode)
+void RandomForest::train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, 
+						 Eigen::MatrixXi *indices, Eigen::MatrixXf *dists, 
+						 int numClasses, int numFeatsPerNode,
+						 Eigen::MatrixXf *cloud, Eigen::VectorXi *truths)
 {
 	if (_numTrees < 1)
 	{
@@ -66,7 +68,7 @@ void RandomForest::train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, Eig
 	}
 
 	// this object holds the whole training dataset
-	_trainSample = new Sample(trainset, labels, indices, dists, _numClasses, _numFeatsPerNode);
+	_trainSample = new Sample(trainset, labels, indices, dists, _numClasses, _numFeatsPerNode, cloud);
 
 	// selected samples
 	Eigen::VectorXi selectedSamplesId(_numSelectedSamples);
@@ -101,7 +103,7 @@ void RandomForest::predict(const char* testDataPath, Eigen::VectorXi &predictedL
 
 	int numTests = testset.rows();
 	predictedLabels.resize(numTests);
-	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, _numClasses, _numFeatsPerNode);
+	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, _numClasses, _numFeatsPerNode, &testset);
 	
 	for (int i = 0; i < numTests; ++i)
 	{

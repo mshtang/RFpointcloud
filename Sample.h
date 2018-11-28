@@ -57,7 +57,13 @@ public:
 	 * node.
 	 *****************************************************************************************/
 	Sample(Eigen::MatrixXf *dataset, Eigen::VectorXi *labels, 
-		   Eigen::MatrixXi *indexMat, Eigen::MatrixXf *distMat, int numClass, int numFeature);
+		   Eigen::MatrixXi *indexMat, Eigen::MatrixXf *distMat, 
+		   int numClass, int numFeature, 
+		   Eigen::MatrixXf *cloud);
+
+	/*Sample(Eigen::MatrixXf *dataset, Eigen::VectorXi *labels,
+		   Eigen::MatrixXi *indexMat, Eigen::MatrixXf *distMat,
+		   int numClass, int numFeature);*/
 	
 	/* to new a Sample object using a pointer to Sample, so that the dataset/labels etc. will 
 	 * not be copied but referenced*/
@@ -105,14 +111,14 @@ public:
 
 	Eigen::VectorXi *_labels;
 	Eigen::MatrixXf *_dataset;
-
+	// pointer to the original cloud
+	Eigen::MatrixXf *_cloud;
 private:
 
 	// _indexMat stores the indices of nearest neighbors for each datapoint
 	Eigen::MatrixXi *_indexMat;
 	// _distMat stores the dists of nearest neighbors to each datapoint
 	Eigen::MatrixXf *_distMat;
-
 	// _selectedSamplesId stores the indices of selected datapoints
 	Eigen::VectorXi _selectedSamplesId;
 	std::vector<Features> _features;
@@ -147,10 +153,10 @@ public:
 		candidates(population);
 
 		std::random_device rd;
-		std::mt19937 gen(rd());
+		// std::mt19937 gen(rd());
 		// DEBUG to uncomment
 		// for debugging purposes, to generate deterministic numbers
-		// std::mt19937 gen(123);
+		std::mt19937 gen(123);
 		std::shuffle(population.begin(), population.end(), gen);
 		std::vector<int> samples(population.begin(), population.begin() + _sampleSize);
 		return samples;

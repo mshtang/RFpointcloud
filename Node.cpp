@@ -48,6 +48,8 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 {
 	Eigen::MatrixXf data = *(_samples->_dataset);
 	Eigen::VectorXi labels =*( _samples->_labels);
+	//Eigen::MatrixXf cloud = *(_samples->_cloud);
+	//Eigen::VectorXi truths = *(_samples->_truths);
 	// randomly samples some points from the cloud
 	// and store the selected points id in sampleId
 	Eigen::VectorXi sampleId = _samples->getSelectedSamplesId();
@@ -83,6 +85,8 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 		for (int j = 0; j < numSamples; ++j)
 		{
 			Eigen::MatrixXf neigh = _samples->buildNeighborhood(sampleId[j]);
+			//InOut tmp;
+			//tmp.writeToDisk("./toy_dataset/firstNeigh.txt", neigh);
 			FeatureFactory nodeFeat(neigh, feat);
 			if (nodeFeat.computeFeature() == false)
 				leftChildSamples.push_back(sampleId[j]);
@@ -144,6 +148,7 @@ void Node::createLeaf(std::vector<float> priorDistr)
 	_class = 0;
 	int numClasses = _samples->getNumClasses();
 	int nullClasses = 0; // classes have no instances
+	float normalizeFactor = 0;
 	for (int i = 0; i < numClasses; ++i)
 	{
 		if (priorDistr[i] == 0)
@@ -152,11 +157,14 @@ void Node::createLeaf(std::vector<float> priorDistr)
 			nullClasses++;
 		}
 		else
+		{
 			_probs[i] = _probs[i] / priorDistr[i];
+			normalizeFactor += _probs[i];
+		}
 	}
 	for (int i = 0; i < numClasses; ++i)
 	{
-		_probs[i] /= (numClasses - nullClasses);
+		_probs[i] /= normalizeFactor;
 	}
 	
 	_prob = _probs[0];
