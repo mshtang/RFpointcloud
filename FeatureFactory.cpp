@@ -90,9 +90,9 @@ std::vector<Eigen::VectorXf> FeatureFactory::averageVoxels()
 	return voxels_avg;
 }
 
-bool FeatureFactory::computeFeature()
+float FeatureFactory::castProjection()
 {
-	bool testResult = false;
+	float testResult = 0;
 	if (_feat._featType <= 8) // radiometric features
 	{
 		localNeighbors();
@@ -149,13 +149,13 @@ bool FeatureFactory::computeFeature()
 				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
 				float lin1 = (neighEigv.x() - neighEigv.y()) / neighEigv.x();
 				float lin2 = (eigv[0].x() - eigv[0].y()) / eigv[0].x();
-				testResult = lin1 < lin2 ? true : false;
+				testResult = lin1 - lin2;
 			}
 			else if (_feat._numVoxels == 2)
 			{
 				float lin1 = (eigv[0].x() - eigv[0].y()) / eigv[0].x();
 				float lin2 = (eigv[1].x() - eigv[1].y()) / eigv[1].x();
-				testResult = lin1 < lin2 ? true : false;
+				testResult = lin1 - lin2;
 			}
 			else
 			{
@@ -163,7 +163,7 @@ bool FeatureFactory::computeFeature()
 				float lin2 = (eigv[1].x() - eigv[1].y()) / eigv[1].x();
 				float lin3 = (eigv[2].x() - eigv[2].y()) / eigv[2].x();
 				float lin4 = (eigv[3].x() - eigv[3].y()) / eigv[3].x();
-				testResult = (lin1 - lin2) < (lin3 - lin4) ? true : false;
+				testResult = (lin1 - lin2) - (lin3 - lin4);
 			}
 		}
 		
@@ -176,13 +176,13 @@ bool FeatureFactory::computeFeature()
 				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
 				float pla1 = (neighEigv.y() - neighEigv.z()) / neighEigv.x();
 				float pla2 = (eigv[0].y() - eigv[0].z()) / eigv[0].x();
-				testResult = pla1 < pla2 ? true : false;
+				testResult = pla1 - pla2;
 			}
 			else if (_feat._numVoxels == 2)
 			{
 				float pla1 = (eigv[0].y() - eigv[0].z()) / eigv[0].x();
 				float pla2 = (eigv[1].y() - eigv[1].z()) / eigv[1].x();
-				testResult = pla1 < pla2 ? true : false;
+				testResult = pla1 - pla2;
 			}
 			else
 			{
@@ -190,7 +190,7 @@ bool FeatureFactory::computeFeature()
 				float pla2 = (eigv[1].y() - eigv[1].z()) / eigv[1].x();
 				float pla3 = (eigv[2].y() - eigv[2].z()) / eigv[2].x();
 				float pla4 = (eigv[3].y() - eigv[3].z()) / eigv[3].x();
-				testResult = (pla1 - pla2) < (pla3 - pla4) ? true : false;
+				testResult = (pla1 - pla2) - (pla3 - pla4);
 			}
 		}
 		
@@ -203,13 +203,13 @@ bool FeatureFactory::computeFeature()
 				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
 				float sca1 = neighEigv.z() / neighEigv.x();
 				float sca2 = eigv[0].z() / eigv[0].x();
-				testResult = sca1 < sca2 ? true : false;
+				testResult = sca1 - sca2;
 			}
 			else if (_feat._numVoxels == 2)
 			{
 				float sca1 = eigv[0].z() / eigv[0].x();
 				float sca2 = eigv[1].z() / eigv[1].x();
-				testResult = sca1 < sca2 ? true : false;
+				testResult = sca1 - sca2;
 			}
 			else
 			{
@@ -217,7 +217,7 @@ bool FeatureFactory::computeFeature()
 				float sca2 = eigv[1].z() / eigv[1].x();
 				float sca3 = eigv[2].z() / eigv[2].x();
 				float sca4 = eigv[3].z() / eigv[3].x();
-				testResult = (sca1 - sca2) < (sca3 - sca4) ? true : false;
+				testResult = (sca1 - sca2) - (sca3 - sca4);
 			}
 		}
 		
@@ -230,13 +230,13 @@ bool FeatureFactory::computeFeature()
 				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
 				float omn1 = std::pow(neighEigv.x()*neighEigv.y()*neighEigv.z(), 1.0/3.0);
 				float omn2 = std::pow(eigv[0].x()*eigv[0].y()*eigv[0].z(), 1.0 / 3.0);
-				testResult = omn1 < omn2 ? true : false;
+				testResult = omn1 - omn2;
 			}
 			else if (_feat._numVoxels == 2)
 			{
 				float omn1 = std::pow(eigv[0].x()*eigv[0].y()*eigv[0].z(), 1.0 / 3.0);
 				float omn2 = std::pow(eigv[1].x()*eigv[1].y()*eigv[1].z(), 1.0 / 3.0);
-				testResult = omn1 < omn2 ? true : false;
+				testResult = omn1 - omn2;
 			}
 			else
 			{
@@ -244,7 +244,7 @@ bool FeatureFactory::computeFeature()
 				float omn2 = std::pow(eigv[1].x()*eigv[1].y()*eigv[1].z(), 1.0 / 3.0);
 				float omn3 = std::pow(eigv[2].x()*eigv[2].y()*eigv[2].z(), 1.0 / 3.0);
 				float omn4 = std::pow(eigv[3].x()*eigv[3].y()*eigv[3].z(), 1.0 / 3.0);
-				testResult = (omn1 - omn2) < (omn3 - omn4) ? true: false;
+				testResult = (omn1 - omn2) - (omn3 - omn4);
 			}
 		}
 
@@ -257,13 +257,13 @@ bool FeatureFactory::computeFeature()
 				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
 				float ani1 = (neighEigv.x() - neighEigv.z()) / neighEigv.x();
 				float ani2 = (eigv[0].x() - eigv[0].z()) / eigv[0].x();
-				testResult = ani1 < ani2 ? true : false;
+				testResult = ani1 - ani2;
 			}
 			else if (_feat._numVoxels == 2)
 			{
 				float ani1 = (eigv[0].x() - eigv[0].z()) / eigv[0].x();
 				float ani2 = (eigv[1].x() - eigv[1].z()) / eigv[1].x();
-				testResult = ani1 < ani2 ? true : false;
+				testResult = ani1 - ani2;
 			}
 			else
 			{
@@ -271,7 +271,7 @@ bool FeatureFactory::computeFeature()
 				float ani2 = (eigv[1].x() - eigv[1].z()) / eigv[1].x();
 				float ani3 = (eigv[2].x() - eigv[2].z()) / eigv[2].x();
 				float ani4 = (eigv[3].x() - eigv[3].z()) / eigv[3].x();
-				testResult = (ani1 - ani2) < (ani3 - ani4) ? true : false;
+				testResult = (ani1 - ani2) - (ani3 - ani4);
 			}
 		}
 
@@ -288,7 +288,7 @@ bool FeatureFactory::computeFeature()
 				float ent2 = -(eigv[0].x()*std::log(eigv[0].x())
 							   + eigv[0].y()*std::log(eigv[0].y())
 							   + eigv[0].z()*std::log(eigv[0].z()));
-				testResult = ent1 < ent2 ? true : false;
+				testResult = ent1 - ent2;
 			}
 			else if (_feat._numVoxels == 2)
 			{
@@ -298,7 +298,7 @@ bool FeatureFactory::computeFeature()
 				float ent2 = -(eigv[1].x()*std::log(eigv[1].x())
 							 + eigv[1].y()*std::log(eigv[1].y())
 							 + eigv[1].z()*std::log(eigv[1].z()));
-				testResult = ent1 < ent2 ? true : false;
+				testResult = ent1 - ent2;
 			}
 			else
 			{
@@ -314,7 +314,7 @@ bool FeatureFactory::computeFeature()
 				float ent4 = -(eigv[3].x()*std::log(eigv[3].x())
 							   + eigv[3].y()*std::log(eigv[3].y())
 							   + eigv[3].z()*std::log(eigv[3].z()));
-				testResult = (ent1 - ent2) < (ent3 - ent4) ? true : false;
+				testResult = (ent1 - ent2) - (ent3 - ent4) ;
 			}
 		}
 
@@ -327,13 +327,13 @@ bool FeatureFactory::computeFeature()
 				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
 				float cha1 = neighEigv.z() / (neighEigv.x() + neighEigv.y() + neighEigv.z());
 				float cha2 = eigv[0].z() / (eigv[0].x() + eigv[0].y() + eigv[0].z());
-				testResult = cha1 < cha2 ? true : false;
+				testResult = cha1 - cha2;
 			}
 			else if (_feat._numVoxels == 2)
 			{
 				float cha1 = eigv[0].z() / (eigv[0].x() + eigv[0].y() + eigv[0].z());
 				float cha2 = eigv[1].z() / (eigv[1].x() + eigv[1].y() + eigv[1].z());
-				testResult = cha1 < cha2 ? true : false;
+				testResult = cha1 - cha2;
 			}
 			else
 			{
@@ -341,7 +341,7 @@ bool FeatureFactory::computeFeature()
 				float cha2 = eigv[1].z() / (eigv[1].x() + eigv[1].y() + eigv[1].z());
 				float cha3 = eigv[2].z() / (eigv[2].x() + eigv[2].y() + eigv[2].z());
 				float cha4 = eigv[3].z() / (eigv[3].x() + eigv[3].y() + eigv[3].z());
-				testResult = (cha1 - cha2)-(cha3-cha4) ? true : false;
+				testResult = (cha1 - cha2) - (cha3 - cha4);
 			}
 		}
 	}
@@ -358,7 +358,7 @@ bool FeatureFactory::computeFeature()
 			float volumn2 = 4.0 / 3.0*std::_Pi *dist2*dist2*dist2;
 			float density1 = _neighborhood.rows() / volumn1;
 			float density2 = _voxels[0].rows() / volumn2;
-			testResult = density1 < density2 ? true : false;
+			testResult = density1 - density2;
 		}
 		else if (_feat._numVoxels == 2)
 		{
@@ -369,7 +369,7 @@ bool FeatureFactory::computeFeature()
 			float volumn2 = 4.0 / 3.0*std::_Pi *dist2*dist2*dist2;
 			float density1 = _voxels[0].rows() / volumn1;
 			float density2 = _voxels[1].rows() / volumn2;
-			testResult = density1 < density2 ? true : false;
+			testResult = density1 - density2;
 		}
 		else
 		{
@@ -385,17 +385,17 @@ bool FeatureFactory::computeFeature()
 			float density2 = _voxels[1].rows() / volumn2;
 			float density3 = _voxels[2].rows() / volumn3;
 			float density4 = _voxels[3].rows() / volumn4;
-			testResult = (density1 - density2) < (density3 - density4) ? true : false;
+			testResult = (density1 - density2) - (density3 - density4);
 		}
 	}
 	return testResult;
 }
 
 
-bool FeatureFactory::compareChannels(std::vector<Eigen::VectorXf> avg_voxels, int channelNo, bool isInRGBSpace)
+float FeatureFactory::compareChannels(std::vector<Eigen::VectorXf> avg_voxels, int channelNo, bool convertToHSV)
 {
 	// if point cloud should be in HSV space
-	if (!isInRGBSpace)
+	if (convertToHSV==true)
 	{
 		for (int i = 0; i < avg_voxels.size(); ++i)
 			avg_voxels[i] = toHSV(avg_voxels[i]);
@@ -404,11 +404,12 @@ bool FeatureFactory::compareChannels(std::vector<Eigen::VectorXf> avg_voxels, in
 	}
 	if (_feat._numVoxels == 1)
 		// _voxels[0].row(0) is the center point of the first voxel
-		return avg_voxels[0](channelNo) < _voxels[0].row(0)(channelNo) ? true : false;
+		return (avg_voxels[0](channelNo) - _voxels[0].row(0)(channelNo));
 	else if (_feat._numVoxels == 2)
-		return avg_voxels[0](channelNo) < avg_voxels[1](channelNo) ? true : false;
+		return (avg_voxels[0](channelNo) - avg_voxels[1](channelNo));
 	else
-		return (avg_voxels[0](channelNo) - avg_voxels[2](channelNo)) < (avg_voxels[1](channelNo) - avg_voxels[3](channelNo)) ? true : false;
+		return ((avg_voxels[0](channelNo) - avg_voxels[2](channelNo))
+				- (avg_voxels[1](channelNo) - avg_voxels[3](channelNo)));
 
 }
 

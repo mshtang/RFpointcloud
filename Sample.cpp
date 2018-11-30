@@ -59,9 +59,9 @@ void Sample::randomSampleDataset(Eigen::VectorXi &selectedSamplesId, int numSele
 
 	// to generate a uniform distribution and sample with replacement
 	std::default_random_engine generator;
-	//generator.seed(time(NULL));
-	//DEBUG to uncomment
-	generator.seed(12345);
+	generator.seed(time(NULL));
+	// DEBUG to uncomment
+	//generator.seed(12345);
 	std::uniform_int_distribution<int> distribution(0, numTotalSamples - 1);
 
 	for (int i = 0; i < _numSelectedSamples; ++i)
@@ -95,6 +95,7 @@ void Sample::randomSampleFeatures()
 		// randomly select a projection type from all possible projections
 		Random rd2(FeatureFactory::numOfPossibleProjections, 1);
 		feature._featType = rd2.sampleWithoutReplacement().at(0);
+		feature._thresh = 0;
 		_features.push_back(feature);
 	}
 }

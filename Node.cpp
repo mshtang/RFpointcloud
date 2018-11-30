@@ -3,6 +3,7 @@
 #include "FeatureFactory.h"
 #include <iostream>
 #include "utils.h"
+#include <algorithm>
 
 Node::Node():
 	_isLeaf(false),
@@ -81,19 +82,25 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 		std::vector<int> rightChildSamples;
 		std::vector<float> leftProbs;
 		std::vector<float> rightProbs;
-		
+		std::vector<float> castResults;
 		for (int j = 0; j < numSamples; ++j)
 		{
 			Eigen::MatrixXf neigh = _samples->buildNeighborhood(sampleId[j]);
-			//InOut tmp;
-			//tmp.writeToDisk("./toy_dataset/firstNeigh.txt", neigh);
 			FeatureFactory nodeFeat(neigh, feat);
-			if (nodeFeat.computeFeature() == false)
+			float castResult = nodeFeat.castProjection();
+			castResults.push_back(castResult);
+		}
+		// find the median of all the projections
+		std::nth_element(castResults.begin(), castResults.begin() + castResults.size() / 2, castResults.end());
+		feat._thresh = castResults[castResults.size() / 2];
+		for (int j = 0; j < numSamples; ++j)
+		{
+			if (castResults[j] < feat._thresh)
 				leftChildSamples.push_back(sampleId[j]);
 			else
 				rightChildSamples.push_back(sampleId[j]);
 		}
-		
+
 		if (leftChildSamples.size() == 0 or rightChildSamples.size() == 0)
 		{
 			continue;

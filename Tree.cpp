@@ -72,14 +72,21 @@ std::vector<float> Tree::predict(Eigen::MatrixXf &testNeigh)
 int Tree::searchNode(Eigen::MatrixXf &testNeigh, int nodeId)
 {
 	if (_treeNodes[nodeId]->isLeaf())
+	{
 		return nodeId;
+	}
 	else
 	{
-		FeatureFactory testNodeFeat(testNeigh, _treeNodes[nodeId]->getBestFeature());
-		if (testNodeFeat.computeFeature() == false)
+		Features testFeat = _treeNodes[nodeId]->getBestFeature();
+		FeatureFactory testNodeFeat(testNeigh,testFeat);
+		if (testNodeFeat.castProjection() < testFeat._thresh)
+		{
 			return searchNode(testNeigh, nodeId * 2 + 1);
+		}
 		else
+		{
 			return searchNode(testNeigh, nodeId * 2 + 2);
+		}
 	}
 }
 
@@ -132,4 +139,3 @@ void Tree::computeStats(std::vector<Node*> nodes)
 		_bestFeatTypeDistr[i] /= nonLeaf;
 	}
 }
-

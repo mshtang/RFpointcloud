@@ -32,7 +32,7 @@ RandomForest::~RandomForest()
 void RandomForest::train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, 
 						 Eigen::MatrixXi *indices, Eigen::MatrixXf *dists, 
 						 int numClasses, int numFeatsPerNode,
-						 Eigen::MatrixXf *cloud, Eigen::VectorXi *truths)
+						 Eigen::MatrixXf *cloud)
 {
 	if (_numTrees < 1)
 	{
@@ -154,6 +154,8 @@ void RandomForest::saveModel(const char* path, const char* statFilePath)
 	fwrite(&_numTrees, sizeof(int), 1, saveFile);
 	fwrite(&_maxDepth, sizeof(int), 1, saveFile);
 	fwrite(&_numClasses, sizeof(int), 1, saveFile);
+	fprintf(statFile, "There are %d trees in the forest.\n", _numTrees);
+	fprintf(statFile, "Each tree has a max height of %d.\n", _maxDepth);
 	int numNodes = static_cast<int>(pow(2.0, _maxDepth) - 1);
 	int isLeaf = 0;
 	for (int i = 0; i < _numTrees; ++i)
@@ -221,6 +223,8 @@ void RandomForest::saveModel(const char* path, const char* statFilePath)
 					fwrite(&numVoxel, sizeof(int), 1, saveFile);
 					int featType = bestFeat._featType;
 					fwrite(&featType, sizeof(int), 1, saveFile);
+					float thresh = bestFeat._thresh;
+					fwrite(&thresh, sizeof(float), 1, saveFile);
 					// save the vector size -> then save its content
 					int pointIdSize = bestFeat._pointId.size();
 					fwrite(&pointIdSize, sizeof(int), 1, saveFile);
@@ -293,6 +297,10 @@ void RandomForest::readModel(const char* path)
 				int featType = 0;
 				fread(&featType, sizeof(int), 1, modelFile);
 				bestFeat._featType = featType;
+				// after that is the thresh
+				float thresh = 0;
+				fread(&thresh, sizeof(float), 1, modelFile);
+				bestFeat._thresh = thresh;
 				// read the two vectors, a little complicated
 				// vector I:
 				int pointIdSize = 0;
