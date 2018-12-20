@@ -12,7 +12,7 @@ class FeatureFactory
 public:
 
 	FeatureFactory(Eigen::MatrixXf& neighborhood, Features feat);
-	bool computeFeature();
+	float castProjection();
 
 	// find the k-nn of each point in this local neighborhood (here k is half the 
 	// number of points in the neighborhood) so that voxels of different sizes
@@ -32,7 +32,7 @@ private:
 	void localNeighbors();
 	void buildVoxels();
 	std::vector<Eigen::VectorXf> averageVoxels();
-	bool compareChannels(std::vector<Eigen::VectorXf> avg_voxels, int channelNo, bool isInRGBSpace=true);
+	float compareChannels(std::vector<Eigen::VectorXf> avg_voxels, int channelNo, bool convertToHSV=false);
 
 	Eigen::Matrix3f computeCovarianceMatrix(Eigen::MatrixXf neigh);
 

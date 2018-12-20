@@ -34,7 +34,7 @@ public:
 	void train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, 
 			   Eigen::MatrixXi *indices, Eigen::MatrixXf *dists, 
 			   int numClasses, int numFeatsPerNode,
-			   Eigen::MatrixXf *cloud, Eigen::VectorXi *truths);
+			   Eigen::MatrixXf *cloud);
 	
 	/***************************************************************************
 	 * pass in the file path to the test dataset. within this method, an InOut

@@ -43,16 +43,16 @@ if __name__ == "__main__":
         r'./toy_dataset/testset_restoring.labels')
     print(conf_mat)
     np.savetxt(
-        # "./datasets/result.txt",
-        r'./toy_dataset/result.txt',
+        # "./datasets/report.txt",
+        r'./toy_dataset/report.txt',
         conf_mat,
         fmt='%8d',
         delimiter='\t',
         header='Confusion matrix is')
     ov_acc = overall_accuracy(conf_mat)
     with open(
-            # r'./datasets/result.txt',
-            r'./toy_dataset/result.txt',
+            # r'./datasets/report.txt',
+            r'./toy_dataset/report.txt',
             'a') as f:
         f.write("overall accuracy is: ")
         f.write("{:1.3f}".format(ov_acc))
@@ -60,8 +60,8 @@ if __name__ == "__main__":
     IoU = intersection_over_union(conf_mat)
     np.round(IoU, 3, IoU)
     with open(
-            # r'./datasets/result.txt',
-            r'./toy_dataset/result.txt',
+            # r'./datasets/report.txt',
+            r'./toy_dataset/report.txt',
             'a') as f:
         f.write("\nIoU is:\n")
         f.write(str(IoU))

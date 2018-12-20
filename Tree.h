@@ -59,4 +59,5 @@ private:
 	float _largestLeafGini;
 	std::vector<float> _largestLeafDistr;
 	std::vector<float> _bestFeatTypeDistr;
+	int _pathLen=0;
 };
