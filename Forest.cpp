@@ -91,6 +91,33 @@ void RandomForest::train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels,
 	}
 }
 
+
+
+
+void RandomForest::predict(const char * testCloudPath, const char * testDataPath, Eigen::VectorXi & predictedLabels)
+{
+	// looking for the nearest neighbors of each point in the test dataset
+	Eigen::MatrixXf	testCloud;
+	Eigen::MatrixXf testset;
+	Eigen::MatrixXi testIndices;
+	Eigen::MatrixXf testDists;
+	InOut testObj;
+	testObj.readPoints(testCloudPath, testCloud);
+	testObj.readPoints(testDataPath, testset);
+	testObj.searchNN(testCloud, testset, testIndices, testDists);
+
+	int numTests = testset.rows();
+	predictedLabels.resize(numTests);
+	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, _numClasses, _numFeatsPerNode, &testCloud);
+	std::cout << "Predcting begins ... " << std::endl;
+	for (int i = 0; i < numTests; ++i)
+	{
+		//Eigen::VectorXi datapoint = testSamples->_dataset->row(i);
+		Eigen::MatrixXf testDataNeigh = testSamples->buildNeighborhood(i);
+		predictedLabels[i] = predict(testDataNeigh);
+	}
+}
+
 void RandomForest::predict(const char* testDataPath, Eigen::VectorXi &predictedLabels)
 {
 	// looking for the nearest neighbors of each point in the test dataset
@@ -104,7 +131,7 @@ void RandomForest::predict(const char* testDataPath, Eigen::VectorXi &predictedL
 	int numTests = testset.rows();
 	predictedLabels.resize(numTests);
 	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, _numClasses, _numFeatsPerNode, &testset);
-	
+	std::cout << "Predcting begins ... " << std::endl;
 	for (int i = 0; i < numTests; ++i)
 	{
 		//Eigen::VectorXi datapoint = testSamples->_dataset->row(i);

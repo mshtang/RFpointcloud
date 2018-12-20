@@ -3,8 +3,9 @@ Debug/
 Release/
 test/
 models/
-toy_dataset/
+TestEnv/
 datasets/
+Results/
 mtTest.vcxproj
 mtTest.vcxproj.filters
 mtTest.vcxproj.user
