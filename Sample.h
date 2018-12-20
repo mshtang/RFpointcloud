@@ -19,7 +19,7 @@ struct Features{
 	Features(const Features& rhs):
 		_numVoxels(rhs._numVoxels),
 		_pointId(rhs._pointId),
-		_voxelSize(rhs._voxelSize),
+		//_voxelSize(rhs._voxelSize),
 		_featType(rhs._featType),
 		_thresh(rhs._thresh)
 	{
@@ -28,14 +28,14 @@ struct Features{
 	{
 		_numVoxels = rhs._numVoxels;
 		_pointId = rhs._pointId;
-		_voxelSize = rhs._voxelSize;
+		//_voxelSize = rhs._voxelSize;
 		_featType = rhs._featType;
 		_thresh = rhs._thresh;
 		return *this;
 	}
 	int _numVoxels;
 	std::vector<int> _pointId;
-	std::vector<int> _voxelSize;
+	//std::vector<int> _voxelSize;
 	int _featType;
 	float _thresh=0.0;
 	// to ensure there are at least 10 points in each voxel, so that 3d features can be calculated

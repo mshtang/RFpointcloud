@@ -260,13 +260,13 @@ void RandomForest::saveModel(const char* path, const char* statFilePath)
 						int pointId = bestFeat._pointId[k];
 						fwrite(&pointId, sizeof(int), 1, saveFile);
 					}
-					int voxelSizeSize = bestFeat._voxelSize.size();
+					/*int voxelSizeSize = bestFeat._voxelSize.size();
 					fwrite(&voxelSizeSize, sizeof(int), 1, saveFile);
 					for (int k = 0; k < voxelSizeSize; ++k)
 					{
 						int voxelSize = bestFeat._voxelSize[k];
 						fwrite(&voxelSize, sizeof(int), 1, saveFile);
-					}
+					}*/
 				}
 			}
 		}
@@ -342,17 +342,17 @@ void RandomForest::readModel(const char* path)
 				}
 				bestFeat._pointId = pointId;
 				// vector II:
-				int voxelSize = 0;
-				fread(&voxelSize, sizeof(int), 1, modelFile);
-				// initialize a vector
-				std::vector<int> voxels(voxelSize, 0);
-				for (int k = 0; k < voxelSize; ++k)
-				{
-					int tmpVoxel = 0;
-					fread(&tmpVoxel, sizeof(int), 1, modelFile);
-					voxels[k] = tmpVoxel;
-				}
-				bestFeat._voxelSize = voxels;
+				//int voxelSize = 0;
+				//fread(&voxelSize, sizeof(int), 1, modelFile);
+				//// initialize a vector
+				//std::vector<int> voxels(voxelSize, 0);
+				//for (int k = 0; k < voxelSize; ++k)
+				//{
+				//	int tmpVoxel = 0;
+				//	fread(&tmpVoxel, sizeof(int), 1, modelFile);
+				//	voxels[k] = tmpVoxel;
+				//}
+				//bestFeat._voxelSize = voxels;
 				_forest[i]->createNode(j, bestFeat);
 			}
 			else
