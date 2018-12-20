@@ -588,7 +588,7 @@ void FeatureFactory::computeEigens(Eigen::Matrix3f &covMat, float &majorVal, flo
 }
 
 // compute the axis algined orientated bounding box
-void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::Vector3f &obbMinP, Eigen::Vector3f &obbMaxP, 
+void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::MatrixXf &neighR, Eigen::Vector3f &obbMinP, Eigen::Vector3f &obbMaxP, 
 								Eigen::Matrix3f &obbR, Eigen::Vector3f &obbPos)
 {
 	Eigen::MatrixXf coords = neigh.leftCols(3);
@@ -611,19 +611,31 @@ void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::Vector3f &obbMinP
 	obbMaxP.x() = std::numeric_limits<float>::min();
 	obbMaxP.y() = std::numeric_limits<float>::min();
 	obbMaxP.z() = std::numeric_limits<float>::min();
-	// rotate the points to the eigenvector frame
-	// origin of the eigenvector frame is the point cloud centroid
+
+	neighR = neigh;
+	
+	// express the points in the local frame formed by the eigenvectors
+	// P_A = P_AB + R_AB * P_B
+	// point expressed in frame {A} is equivalent to this point expressed
+	// in frame {B} rotated by R_AB (rotation of frame {B} relative to frame {A})
+	// plus the translation of origin of {B} to {A}
+	// suppose {A} is the universal frame and {B} is the local frame
+	// then P_B = R_AB^-1 * (P_A - P_AB) = R_AB^T * (P_A - P_AB).
 	for (int i = 0; i < coords.rows(); ++i)
 	{
 		float x = (coords(i, 0) - meanVal(0))*majorAxis(0) 
-				+ (coords(i, 1) - meanVal(1))*majorAxis(1) 
-				+ (coords(i, 2) - meanVal(2))*majorAxis(2);
-		float y = (coords(i, 0) - meanVal(0))*midAxis(0)
+				+ (coords(i, 1) - meanVal(1))*midAxis(0) 
+				+ (coords(i, 2) - meanVal(2))*minorAxis(0);
+		float y = (coords(i, 0) - meanVal(0))*majorAxis(1)
 				+ (coords(i, 1) - meanVal(1))*midAxis(1)
-				+ (coords(i, 2) - meanVal(2))*midAxis(2);
-		float z = (coords(i, 0) - meanVal(0))*minorAxis(0)
-				+ (coords(i, 1) - meanVal(1))*minorAxis(1)
+				+ (coords(i, 2) - meanVal(2))*minorAxis(1);
+		float z = (coords(i, 0) - meanVal(0))*majorAxis(2)
+				+ (coords(i, 1) - meanVal(1))*midAxis(2)
 				+ (coords(i, 2) - meanVal(2))*minorAxis(2);
+
+		neighR(i, 0) = x;
+		neighR(i, 1) = y;
+		neighR(i, 2) = z;
 
 		if (x <= obbMinP.x()) 
 			obbMinP.x()=x;
@@ -647,13 +659,13 @@ void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::Vector3f &obbMinP
 			majorAxis(2), midAxis(2), minorAxis(2);
 
 	// translation vector
-	Eigen::Vector3f trans((obbMaxP.x() + obbMinP.x()) / 2.0,
-						  (obbMaxP.y() + obbMinP.y()) / 2.0,
-						  (obbMaxP.z() + obbMinP.z()) / 2.0);
-
-	obbMaxP -= trans;
-	obbMinP -= trans;
-
+	Eigen::Vector3f trans((obbMaxP.x() - obbMinP.x()) / 2.0,
+						  (obbMaxP.y() - obbMinP.y()) / 2.0,
+						  (obbMaxP.z() - obbMinP.z()) / 2.0);
+	// translate the origin of the local frame to the minimal point
+	neighR.leftCols(3).rowwise() -= obbMinP.transpose();
+	obbMaxP -= obbMinP;
+	obbMinP -= obbMinP;
 	obbPos << 0, 0, 0;
 	obbPos = meanVal + obbR * trans;
 }
@@ -671,14 +683,15 @@ void FeatureFactory::partitionSpace(Eigen::MatrixXf &neigh)
 	Eigen::Vector3f maxp(0, 0, 0);  // the maximal dimensions
 	Eigen::Matrix3f rot;  // rotation matrix
 	rot.setZero();
+	Eigen::MatrixXf neighR;
 	Eigen::Vector3f pos(0, 0, 0); // translation matrix
-	computeOBB(neigh, minp, maxp, rot, pos);
+	computeOBB(neigh, neighR, minp, maxp, rot, pos);
 	// divide the length/width/height of the bounding box into three parts
 	// that is the dimensions of the small cubes
 	// to avoid divisions in successive steps, the inverse of each is computed
-	float inverse_dlength = 3.0f/(maxp(0) - minp(0));
-	float inverse_dwidth = 3.0f/(maxp(1) - minp(1));
-	float inverse_dheight = 3.0f/(maxp(2) - minp(2));
+	float inverse_dlength = 3.0f/(maxp(0) - minp(0))-1e-5;
+	float inverse_dwidth = 3.0f/(maxp(1) - minp(1))-1e-5;
+	float inverse_dheight = 3.0f/(maxp(2) - minp(2))-1e-5;
 	// compute the minimal/maximal bounding box values
 	Eigen::Vector3i minbb(0, 0, 0);
 	Eigen::Vector3i maxbb(0, 0, 0);
@@ -688,14 +701,14 @@ void FeatureFactory::partitionSpace(Eigen::MatrixXf &neigh)
 	//maxbb(1) = static_cast<int>(floor(maxp(1) * inverse_dwidth));
 	minbb(2) = static_cast<int>(floor(minp(2) * inverse_dheight));
 	//maxbb(2) = static_cast<int>(floor(maxp(2) * inverse_dheight));
-	std::vector<std::vector<Eigen::VectorXf>> voxel(27);
+	std::vector<std::vector<Eigen::VectorXf>> voxels(27);
 	for (int i = 0; i < neigh.rows(); ++i)
 	{
-		int ijk0 = static_cast<int>(floor(neigh(i, 0)*inverse_dlength) - static_cast<float>(minbb(0)));
-		int ijk1 = static_cast<int>(floor(neigh(i, 1)*inverse_dwidth) - static_cast<float>(minbb(1)));
-		int ijk2 = static_cast<int>(floor(neigh(i, 2)*inverse_dheight) - static_cast<float>(minbb(2)));
+		int ijk0 = static_cast<int>(floor(neighR(i, 0)*inverse_dlength));
+		int ijk1 = static_cast<int>(floor(neighR(i, 1)*inverse_dwidth));
+		int ijk2 = static_cast<int>(floor(neighR(i, 2)*inverse_dheight));
 		int idx = ijk0 + ijk1 * 3 + ijk2 * 9;
-		voxel[idx].push_back(neigh.row(i));
+		voxels[idx].push_back(neigh.row(i));
 	}
 	
 
