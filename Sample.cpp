@@ -82,16 +82,17 @@ void Sample::randomSampleFeatures()
 		Features feature;
 		// number of voxels in this feature
 		feature._numVoxels = randomFrom124();
-		Random rd(numPoints, feature._numVoxels);
+		// each neighborhood is divided into 27 subvoxels
+		Random rd(27, feature._numVoxels);
 		feature._pointId = rd.sampleWithoutReplacement();
 		// for each voxel, randomly choose the number of points in each voxel which is
 		// in the range (0.1*numOfPointsInNeighborhood, 0.5*numOfPointsInNeighborhood)
-		for (int i = 0; i < feature._numVoxels; ++i)
+		/*for (int i = 0; i < feature._numVoxels; ++i)
 		{
 			Random rd(feature.maxSamplesPerVoxel - feature.minSamplesPerVoxel, 1);
 			int tmp = rd.sampleWithoutReplacement().at(0) + feature.minSamplesPerVoxel;
 			feature._voxelSize.push_back(tmp);
-		}
+		}*/
 		// randomly select a projection type from all possible projections
 		Random rd2(FeatureFactory::numOfPossibleProjections, 1);
 		feature._featType = rd2.sampleWithoutReplacement().at(0);

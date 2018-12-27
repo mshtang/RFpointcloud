@@ -10,73 +10,32 @@ FeatureFactory::FeatureFactory(Eigen::MatrixXf& neighborhood, Features feat) :
 	_feat(feat)
 {}
 
-void FeatureFactory::localNeighbors()
-{
-	typedef Eigen::Matrix<float, Eigen::Dynamic, 3, Eigen::RowMajor> Matrix3fRow;
-	Matrix3fRow coords = _neighborhood.leftCols(3);
 
-	// different max_leaf values only affect the search speed 
-	// and any value between 10 - 50 is reasonable
-	const int max_leaf = 10;
-	nanoflann::KDTreeEigenMatrixAdaptor<Matrix3fRow> mat_index(coords, max_leaf);
-	mat_index.index->buildIndex();
-
-	// maximal number of nn is half size the neighborhood
-	int k1 = _neighborhood.rows();
-
-	_localIndices.resize(_neighborhood.rows(), k1);
-	_localDists.resize(_neighborhood.rows(), k1);
-
-	// do a knn search
-	for (int i = 0; i < coords.rows(); ++i)
-	{
-		// coords is RowMajor so coords.data()[i*3+0 / +1  / +2] represents the ith row of coords
-		std::vector<float> query_pt{ coords.data()[i * 3 + 0], coords.data()[i * 3 + 1], coords.data()[i * 3 + 2] };
-
-		std::vector<size_t> ret_indices(k1);
-		std::vector<float> out_dists_sqr(k1);
-		nanoflann::KNNResultSet<float> resultSet(k1);
-		resultSet.init(&ret_indices[0], &out_dists_sqr[0]);
-		mat_index.index->findNeighbors(resultSet, &query_pt[0], nanoflann::SearchParams(10));
-		for (size_t j = 0; j < k1; ++j)
-		{
-			_localIndices(i, j) = ret_indices[j];
-			_localDists(i, j) = std::sqrt(out_dists_sqr[j]);
-		}
-	}
-	// DEBUG to uncomment
-	/*InOut tmp;
-	tmp.writeToDisk("./toy_dataset/localIndex.txt", _localIndices);
-	tmp.writeToDisk("./toy_dataset/localDists.txt", _localDists);*/
-}
-
-void FeatureFactory::buildVoxels()
+void FeatureFactory::buildVoxels(std::vector<std::vector<Eigen::VectorXf>> &partitions)
 {
 	for (int i = 0; i < _feat._numVoxels; ++i)
 	{
-		Eigen::MatrixXf voxel;
-		int rowsOfVoxel = _feat._voxelSize[i]+1;
-		// here because the neighborhood already contains the dist information
-		// (but it's relative to the original point cloud), so the dim is 8
-		voxel.resize(rowsOfVoxel, 8);
-		int pointId = _feat._pointId[i];
-		Eigen::MatrixXi pointIdsForVoxel = _localIndices.row(pointId);
-		Eigen::VectorXf dists = _localDists.row(pointId).leftCols(rowsOfVoxel);
-		Eigen::MatrixXf newdists = Eigen::Map<Eigen::Matrix<float, -1, 1>>(dists.data(), dists.size());
-		for (int j = 0; j < rowsOfVoxel; ++j)
+		int idx = _feat._pointId[i];
+		if (partitions[idx].size() == 0)
 		{
-			voxel.row(j) = _neighborhood.row(pointIdsForVoxel(j));
+			Eigen::MatrixXf tmp;
+			tmp << 0;
+			_voxels.push_back(tmp);
 		}
-		voxel << voxel.leftCols(7), newdists;
-		// DEBUG to uncomment
-		//std::cout << "Voxel " << i << " is:\n" << voxel << std::endl;
-		/*InOut inout;
-		std::string filename = "voxel " + std::to_string(i) + ".txt";
-		inout.writeToDisk(filename.c_str(), voxel);*/
-		_voxels.push_back(voxel);
+		else if (partitions[idx].size() == 1)
+		{
+			_voxels.push_back(partitions[idx][0]);
+		}
+		else
+		{
+			std::vector<Eigen::VectorXf> points = partitions[idx];
+			Eigen::MatrixXf voxel(points.size(), 7);
+			for (int j = 0; j < points.size(); ++j)
+				voxel.row(j) = points[j].transpose();
+			_voxels.push_back(voxel);
+		}
 	}
 }
-
 
 std::vector<Eigen::VectorXf> FeatureFactory::averageVoxels()
 {
@@ -90,328 +49,177 @@ std::vector<Eigen::VectorXf> FeatureFactory::averageVoxels()
 	return voxels_avg;
 }
 
-float FeatureFactory::castProjection()
+float FeatureFactory::project()
 {
-//	float testResult = 0;
-//	if (_feat._featType <= 8) // radiometric features
-//	{
-//		localNeighbors();
-//		buildVoxels();
-//		std::vector<Eigen::VectorXf> avg_voxels = averageVoxels();
-//		// red channel diff
-//		if (_feat._featType == 0)
-//			testResult = compareChannels(avg_voxels, 4);
-//
-//		// green channel diff
-//		else if (_feat._featType == 1)
-//			testResult = compareChannels(avg_voxels, 5);
-//
-//		// blue channel diff
-//		else if (_feat._featType == 2)
-//			testResult = compareChannels(avg_voxels, 6);
-//
-//		// h value diff
-//		else if (_feat._featType == 3)
-//			testResult = compareChannels(avg_voxels, 4, false);
-//
-//		// s value diff
-//		else if (_feat._featType == 4)
-//			testResult = compareChannels(avg_voxels, 5, false);
-//
-//		// v value diff
-//		else if (_feat._featType == 5)
-//			testResult = compareChannels(avg_voxels, 6, false);
-//
-//		// x diff
-//		else if (_feat._featType == 6)
-//			testResult = compareChannels(avg_voxels, 0);
-//
-//		// y diff
-//		else if (_feat._featType == 7)
-//			testResult = compareChannels(avg_voxels, 1);
-//
-//		// z diff
-//		else if (_feat._featType == 8)
-//			testResult = compareChannels(avg_voxels, 2);
-//	}
-//	// features based on local voxel covariance matrices 
-//	// (eigenvalue-based 3d geometric features)
-//	else if(_feat._featType>=9 and _feat._featType<=15)
-//	{
-//		std::vector<Eigen::Matrix3f> tensor = computeCovarianceMatrix();
-//		std::vector<Eigen::Vector3f> eigv = computeEigenValues(tensor);
-//		// compare linearity
-//		if (_feat._featType == 9)
-//		{
-//			if (_feat._numVoxels == 1)
-//			{
-//				Eigen::Matrix3f neighCov = computeCovarianceMatrix(_neighborhood);
-//				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
-//				float lin1 = (neighEigv.x() - neighEigv.y()) / neighEigv.x();
-//				float lin2 = (eigv[0].x() - eigv[0].y()) / eigv[0].x();
-//				testResult = lin1 - lin2;
-//			}
-//			else if (_feat._numVoxels == 2)
-//			{
-//				float lin1 = (eigv[0].x() - eigv[0].y()) / eigv[0].x();
-//				float lin2 = (eigv[1].x() - eigv[1].y()) / eigv[1].x();
-//				testResult = lin1 - lin2;
-//			}
-//			else
-//			{
-//				float lin1 = (eigv[0].x() - eigv[0].y()) / eigv[0].x();
-//				float lin2 = (eigv[1].x() - eigv[1].y()) / eigv[1].x();
-//				float lin3 = (eigv[2].x() - eigv[2].y()) / eigv[2].x();
-//				float lin4 = (eigv[3].x() - eigv[3].y()) / eigv[3].x();
-//				testResult = (lin1 - lin2) - (lin3 - lin4);
-//			}
-//		}
-//		
-//		// compare planarity
-//		else if (_feat._featType == 10)
-//		{
-//			if (_feat._numVoxels == 1)
-//			{
-//				Eigen::Matrix3f neighCov = computeCovarianceMatrix(_neighborhood);
-//				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
-//				float pla1 = (neighEigv.y() - neighEigv.z()) / neighEigv.x();
-//				float pla2 = (eigv[0].y() - eigv[0].z()) / eigv[0].x();
-//				testResult = pla1 - pla2;
-//			}
-//			else if (_feat._numVoxels == 2)
-//			{
-//				float pla1 = (eigv[0].y() - eigv[0].z()) / eigv[0].x();
-//				float pla2 = (eigv[1].y() - eigv[1].z()) / eigv[1].x();
-//				testResult = pla1 - pla2;
-//			}
-//			else
-//			{
-//				float pla1 = (eigv[0].y() - eigv[0].z()) / eigv[0].x();
-//				float pla2 = (eigv[1].y() - eigv[1].z()) / eigv[1].x();
-//				float pla3 = (eigv[2].y() - eigv[2].z()) / eigv[2].x();
-//				float pla4 = (eigv[3].y() - eigv[3].z()) / eigv[3].x();
-//				testResult = (pla1 - pla2) - (pla3 - pla4);
-//			}
-//		}
-//		
-//		// compare scattering
-//		else if (_feat._featType == 11)
-//		{
-//			if (_feat._numVoxels == 1)
-//			{
-//				Eigen::Matrix3f neighCov = computeCovarianceMatrix(_neighborhood);
-//				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
-//				float sca1 = neighEigv.z() / neighEigv.x();
-//				float sca2 = eigv[0].z() / eigv[0].x();
-//				testResult = sca1 - sca2;
-//			}
-//			else if (_feat._numVoxels == 2)
-//			{
-//				float sca1 = eigv[0].z() / eigv[0].x();
-//				float sca2 = eigv[1].z() / eigv[1].x();
-//				testResult = sca1 - sca2;
-//			}
-//			else
-//			{
-//				float sca1 = eigv[0].z() / eigv[0].x();
-//				float sca2 = eigv[1].z() / eigv[1].x();
-//				float sca3 = eigv[2].z() / eigv[2].x();
-//				float sca4 = eigv[3].z() / eigv[3].x();
-//				testResult = (sca1 - sca2) - (sca3 - sca4);
-//			}
-//		}
-//		
-//		// omnivariance
-//		else if (_feat._featType == 12)
-//		{
-//			if (_feat._numVoxels == 1)
-//			{
-//				Eigen::Matrix3f neighCov = computeCovarianceMatrix(_neighborhood);
-//				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
-//				float omn1 = std::pow(neighEigv.x()*neighEigv.y()*neighEigv.z(), 1.0/3.0);
-//				float omn2 = std::pow(eigv[0].x()*eigv[0].y()*eigv[0].z(), 1.0 / 3.0);
-//				testResult = omn1 - omn2;
-//			}
-//			else if (_feat._numVoxels == 2)
-//			{
-//				float omn1 = std::pow(eigv[0].x()*eigv[0].y()*eigv[0].z(), 1.0 / 3.0);
-//				float omn2 = std::pow(eigv[1].x()*eigv[1].y()*eigv[1].z(), 1.0 / 3.0);
-//				testResult = omn1 - omn2;
-//			}
-//			else
-//			{
-//				float omn1 = std::pow(eigv[0].x()*eigv[0].y()*eigv[0].z(), 1.0 / 3.0);
-//				float omn2 = std::pow(eigv[1].x()*eigv[1].y()*eigv[1].z(), 1.0 / 3.0);
-//				float omn3 = std::pow(eigv[2].x()*eigv[2].y()*eigv[2].z(), 1.0 / 3.0);
-//				float omn4 = std::pow(eigv[3].x()*eigv[3].y()*eigv[3].z(), 1.0 / 3.0);
-//				testResult = (omn1 - omn2) - (omn3 - omn4);
-//			}
-//		}
-//
-//		// anisotropy
-//		else if (_feat._featType == 13)
-//		{
-//			if (_feat._numVoxels == 1)
-//			{
-//				Eigen::Matrix3f neighCov = computeCovarianceMatrix(_neighborhood);
-//				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
-//				float ani1 = (neighEigv.x() - neighEigv.z()) / neighEigv.x();
-//				float ani2 = (eigv[0].x() - eigv[0].z()) / eigv[0].x();
-//				testResult = ani1 - ani2;
-//			}
-//			else if (_feat._numVoxels == 2)
-//			{
-//				float ani1 = (eigv[0].x() - eigv[0].z()) / eigv[0].x();
-//				float ani2 = (eigv[1].x() - eigv[1].z()) / eigv[1].x();
-//				testResult = ani1 - ani2;
-//			}
-//			else
-//			{
-//				float ani1 = (eigv[0].x() - eigv[0].z()) / eigv[0].x();
-//				float ani2 = (eigv[1].x() - eigv[1].z()) / eigv[1].x();
-//				float ani3 = (eigv[2].x() - eigv[2].z()) / eigv[2].x();
-//				float ani4 = (eigv[3].x() - eigv[3].z()) / eigv[3].x();
-//				testResult = (ani1 - ani2) - (ani3 - ani4);
-//			}
-//		}
-//
-//		// eigenentropy
-//		else if (_feat._featType == 14)
-//		{
-//			if (_feat._numVoxels == 1)
-//			{
-//				Eigen::Matrix3f neighCov = computeCovarianceMatrix(_neighborhood);
-//				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
-//				float ent1 = -(neighEigv.x()*std::log(neighEigv.x())
-//							   + neighEigv.y()*std::log(neighEigv.y())
-//							   + neighEigv.z()*std::log(neighEigv.z()));
-//				float ent2 = -(eigv[0].x()*std::log(eigv[0].x())
-//							   + eigv[0].y()*std::log(eigv[0].y())
-//							   + eigv[0].z()*std::log(eigv[0].z()));
-//				testResult = ent1 - ent2;
-//			}
-//			else if (_feat._numVoxels == 2)
-//			{
-//				float ent1 = -(eigv[0].x()*std::log(eigv[0].x())
-//							 + eigv[0].y()*std::log(eigv[0].y())
-//							 + eigv[0].z()*std::log(eigv[0].z()));
-//				float ent2 = -(eigv[1].x()*std::log(eigv[1].x())
-//							 + eigv[1].y()*std::log(eigv[1].y())
-//							 + eigv[1].z()*std::log(eigv[1].z()));
-//				testResult = ent1 - ent2;
-//			}
-//			else
-//			{
-//				float ent1 = -(eigv[0].x()*std::log(eigv[0].x())
-//							   + eigv[0].y()*std::log(eigv[0].y())
-//							   + eigv[0].z()*std::log(eigv[0].z()));
-//				float ent2 = -(eigv[1].x()*std::log(eigv[1].x())
-//							   + eigv[1].y()*std::log(eigv[1].y())
-//							   + eigv[1].z()*std::log(eigv[1].z()));
-//				float ent3 = -(eigv[2].x()*std::log(eigv[2].x())
-//							   + eigv[2].y()*std::log(eigv[2].y())
-//							   + eigv[2].z()*std::log(eigv[2].z()));
-//				float ent4 = -(eigv[3].x()*std::log(eigv[3].x())
-//							   + eigv[3].y()*std::log(eigv[3].y())
-//							   + eigv[3].z()*std::log(eigv[3].z()));
-//				testResult = (ent1 - ent2) - (ent3 - ent4) ;
-//			}
-//		}
-//
-//		// change of curvature
-//		else // _feat._featType == 15
-//		{
-//			if(_feat._numVoxels==1)
-//			{
-//				Eigen::Matrix3f neighCov = computeCovarianceMatrix(_neighborhood);
-//				Eigen::Vector3f neighEigv = computeEigenValues(neighCov);
-//				float cha1 = neighEigv.z() / (neighEigv.x() + neighEigv.y() + neighEigv.z());
-//				float cha2 = eigv[0].z() / (eigv[0].x() + eigv[0].y() + eigv[0].z());
-//				testResult = cha1 - cha2;
-//			}
-//			else if (_feat._numVoxels == 2)
-//			{
-//				float cha1 = eigv[0].z() / (eigv[0].x() + eigv[0].y() + eigv[0].z());
-//				float cha2 = eigv[1].z() / (eigv[1].x() + eigv[1].y() + eigv[1].z());
-//				testResult = cha1 - cha2;
-//			}
-//			else
-//			{
-//				float cha1 = eigv[0].z() / (eigv[0].x() + eigv[0].y() + eigv[0].z());
-//				float cha2 = eigv[1].z() / (eigv[1].x() + eigv[1].y() + eigv[1].z());
-//				float cha3 = eigv[2].z() / (eigv[2].x() + eigv[2].y() + eigv[2].z());
-//				float cha4 = eigv[3].z() / (eigv[3].x() + eigv[3].y() + eigv[3].z());
-//				testResult = (cha1 - cha2) - (cha3 - cha4);
-//			}
-//		}
-//	}
-//	else // _feat._featType==16: local density
-//	{
-//		localNeighbors();
-//		buildVoxels();
-//		if (_feat._numVoxels == 1)
-//		{
-//			// the furtherst point to the center is the radius of this neighborhood
-//			float dist1 = _neighborhood.bottomRightCorner(1,1)(0, 0);
-//			float dist2 = _voxels[0].bottomRightCorner(1, 1)(0, 0);
-//			float volumn1 = 4.0 / 3.0*std::_Pi *dist1*dist1*dist1;
-//			float volumn2 = 4.0 / 3.0*std::_Pi *dist2*dist2*dist2;
-//			float density1 = _neighborhood.rows() / volumn1;
-//			float density2 = _voxels[0].rows() / volumn2;
-//			testResult = density1 - density2;
-//		}
-//		else if (_feat._numVoxels == 2)
-//		{
-//			
-//			float dist1 = _voxels[0].bottomRightCorner(1, 1)(0, 0);
-//			float dist2 = _voxels[1].bottomRightCorner(1, 1)(0, 0);
-//			float volumn1 = 4.0 / 3.0*std::_Pi *dist1*dist1*dist1;
-//			float volumn2 = 4.0 / 3.0*std::_Pi *dist2*dist2*dist2;
-//			float density1 = _voxels[0].rows() / volumn1;
-//			float density2 = _voxels[1].rows() / volumn2;
-//			testResult = density1 - density2;
-//		}
-//		else
-//		{
-//			float dist1 = _voxels[0].bottomRightCorner(1, 1)(0, 0);
-//			float dist2 = _voxels[1].bottomRightCorner(1, 1)(0, 0);
-//			float dist3 = _voxels[2].bottomRightCorner(1, 1)(0, 0);
-//			float dist4 = _voxels[3].bottomRightCorner(1, 1)(0, 0);
-//			float volumn1 = 4.0 / 3.0*std::_Pi *dist1*dist1*dist1;
-//			float volumn2 = 4.0 / 3.0*std::_Pi *dist2*dist2*dist2;
-//			float volumn3 = 4.0 / 3.0*std::_Pi *dist3*dist3*dist3;
-//			float volumn4 = 4.0 / 3.0*std::_Pi *dist4*dist4*dist4;
-//			float density1 = _voxels[0].rows() / volumn1;
-//			float density2 = _voxels[1].rows() / volumn2;
-//			float density3 = _voxels[2].rows() / volumn3;
-//			float density4 = _voxels[3].rows() / volumn4;
-//			testResult = (density1 - density2) - (density3 - density4);
-//		}
-//	}
-//	return testResult;
-	return 0;
+	std::vector<std::vector<Eigen::VectorXf>> partitions;
+	partitions = partitionSpace(_neighborhood);
+	buildVoxels(partitions);
+	float testResult = 0.0f;
+	// one voxel comparison
+	if (_voxels.size() == 1)
+	{
+		// if the voxel has no points
+		if (_voxels[0].size() == 1)
+			return -1;
+		else
+		{
+			float voxelValue = castProjection(_voxels[0], _feat._featType);
+			float centerPointValue = castProjection(_neighborhood.row(0), _feat._featType);
+			return centerPointValue - voxelValue;
+		}
+	}
+	// two voxel comparison
+	else if (_voxels.size() == 2)
+	{
+		// if both voxels are not empty
+		if (_voxels[0].size() != 1 and _voxels[1].size() != 1)
+		{
+			float voxelValue1 = castProjection(_voxels[0], _feat._featType);
+			float voxelValue2 = castProjection(_voxels[1], _feat._featType);
+			return voxelValue1 - voxelValue2;
+		}
+		// downgrade to 1 voxel case
+		else if (_voxels[0].size() == 1)
+		{
+			float voxelValue = castProjection(_voxels[1], _feat._featType);
+			float centerPointValue = castProjection(_neighborhood.row(0), _feat._featType);
+			return centerPointValue - voxelValue;
+		}
+		else if (_voxels[1].size() == 1)
+		{
+			float voxelValue = castProjection(_voxels[0], _feat._featType);
+			float centerPointValue = castProjection(_neighborhood.row(0), _feat._featType);
+			return centerPointValue - voxelValue;
+		}
+		// both voxels are empty
+		else return -1;
+	}
+	// four voxel comparison
+	else
+	{
+		// if all voxels are not empty
+		if (_voxels[0].size() != 1 and _voxels[1].size() != 1
+			and _voxels[2].size() != 1 and _voxels[3].size() != 1)
+		{
+			float voxelValue1 = castProjection(_voxels[0], _feat._featType);
+			float voxelValue2 = castProjection(_voxels[1], _feat._featType);
+			float voxelValue3 = castProjection(_voxels[2], _feat._featType);
+			float voxelValue4 = castProjection(_voxels[3], _feat._featType);
+			return (voxelValue1 - voxelValue2) - (voxelValue3 - voxelValue4);
+		}
+		// special cases
+		else
+		{
+			return -1;
+		}
+	}
+}
+float FeatureFactory::castProjection(const Eigen::MatrixXf &voxel, int featType)
+{
+
+	float testResult = 0;
+
+	if (_feat._featType <= 8) // radiometric features
+	{
+		Eigen::MatrixXf avg_voxel;
+		if (voxel.rows() != 1)
+			avg_voxel = voxel.colwise.mean();
+		else
+			avg_voxel = voxel;
+
+		// red channel
+		if (featType == 0)
+			testResult = selectChannel(avg_voxel, 4);
+
+		// green channel
+		else if (featType == 1)
+			testResult = selectChannel(avg_voxel, 5);
+
+		// blue channel
+		else if (featType == 2)
+			testResult = selectChannel(avg_voxel, 6);
+
+		// h value
+		else if (featType == 3)
+			testResult = selectChannel(avg_voxel, 4, false);
+
+		// s value
+		else if (featType == 4)
+			testResult = selectChannel(avg_voxel, 5, false);
+
+		// v value
+		else if (featType == 5)
+			testResult = selectChannel(avg_voxel, 6, false);
+
+		// x
+		else if (featType == 6)
+			testResult = selectChannel(avg_voxel, 0);
+
+		// y
+		else if (featType == 7)
+			testResult = selectChannel(avg_voxel, 1);
+
+		// z
+		else if (featType == 8)
+			testResult = selectChannel(avg_voxel, 2);
+	}
+	// features based on local voxel covariance matrices 
+	// (eigenvalue-based 3d geometric features)
+	else if (featType >= 9 and featType <= 15)
+	{
+		if (voxel.rows() == 1 or voxel.rows() == 2)
+			return -1;
+		
+		// eigenvalues
+		float eigv0 = 0;
+		float eigv1 = 0;
+		float eigv2 = 0;
+		// eigenvectors;
+		Eigen::Vector3f vec0;
+		Eigen::Vector3f vec1;
+		Eigen::Vector3f vec2;
+
+		computeEigens(voxel, eigv0, eigv1, eigv2, vec0, vec1, vec2);
+		
+		// compare linearity
+		if (featType == 9)
+			return (eigv0 - eigv1) / eigv0;
+
+		// compare planarity
+		else if (featType == 10)
+			return (eigv1 - eigv2) / eigv0;
+
+		// compare scattering
+		else if (featType == 11)
+			return eigv2 / eigv0;
+
+		// omnivariance
+		else if (featType == 12)
+			return std::pow(eigv0*eigv1*eigv2, 1.0 / 3.0);
+
+		// anisotropy
+		else if (featType == 13)
+			return (eigv0 - eigv2) / eigv0;
+
+		// eigenentropy
+		else if (featType == 14)
+			return -(eigv0*std::log(eigv0) + eigv1 * std::log(eigv1) + eigv2 * std::log(eigv2));
+
+		// change of curvature
+		else // _feat._featType == 15
+			return eigv2 / (eigv0 + eigv1 + eigv2);
+	}
+	else
+		return -1;
 }
 
 
-float FeatureFactory::compareChannels(std::vector<Eigen::VectorXf> avg_voxels, int channelNo, bool convertToHSV)
+float FeatureFactory::selectChannel(Eigen::VectorXf avg_voxel, int channelNo, bool convertToHSV)
 {
 	// if point cloud should be in HSV space
-	if (convertToHSV==true)
-	{
-		for (int i = 0; i < avg_voxels.size(); ++i)
-			avg_voxels[i] = toHSV(avg_voxels[i]);
-		_voxels[0].row(0) = toHSV(_voxels[0].row(0));
-
-	}
-	if (_feat._numVoxels == 1)
-		// _voxels[0].row(0) is the center point of the first voxel
-		return (avg_voxels[0](channelNo) - _voxels[0].row(0)(channelNo));
-	else if (_feat._numVoxels == 2)
-		return (avg_voxels[0](channelNo) - avg_voxels[1](channelNo));
-	else
-		return ((avg_voxels[0](channelNo) - avg_voxels[2](channelNo))
-				- (avg_voxels[1](channelNo) - avg_voxels[3](channelNo)));
-
+	if (convertToHSV == true)
+		avg_voxel = toHSV(avg_voxel);
+	return avg_voxel[channelNo];
 }
 
 Eigen::Matrix3f FeatureFactory::computeCovarianceMatrix(Eigen::MatrixXf neigh)
@@ -441,40 +249,6 @@ Eigen::Matrix3f FeatureFactory::computeCovarianceMatrix(Eigen::MatrixXf neigh)
 	return covMat;
 }
 
-std::vector<Eigen::Matrix3f> FeatureFactory::computeCovarianceMatrix()
-{
-	// to obtain the local indices
-	localNeighbors();
-	// DEBUG to uncomment
-	// std::cout << _localIndices << std::endl;
-	// build voxels based on local indices with pointId and voxelSize;
-	buildVoxels();
-	std::vector<Eigen::Matrix3f> res;
-	for (int i = 0; i < _voxels.size(); ++i)
-	{
-		Eigen::Matrix3f covMat = computeCovarianceMatrix(_voxels[i]);
-		res.push_back(covMat);
-	}
-	return res;
-}
-
-//Eigen::Vector3f FeatureFactory::computeEigenValues(Eigen::Matrix3f covMat)
-//{
-//	Eigen::Vector3f eigv;
-//	Eigen::EigenSolver<Eigen::Matrix3f> es(covMat,false);
-//	// eigenvalues are not in a particular order
-//	eigv = es.eigenvalues().real(); 
-//	// in descending order
-//	std::sort(eigv.data(), eigv.data() + eigv.size(), [](float a, float b) { return a > b; });
-//	//std::sort(eigv.data(), eigv.data() + eigv.size(), std::greater<float>());
-//	//if eigenvalues are less than or equal to 0, set them to 1e-6 to avoid dividing by NaN;
-//	if (eigv(0) <= 0) eigv(0) = 1e-6;
-//	if (eigv(1) <= 0) eigv(1) = 1e-6;
-//	if (eigv(2) <= 0) eigv(2) = 1e-6;
-//	// normalize eigenvalues
-//	eigv /= eigv.sum();
-//	return eigv;
-//}
 
 // analytically solve the eigenvalues
 //Eigen::Vector3f FeatureFactory::computeEigenValues(Eigen::Matrix3f covMat)
@@ -519,18 +293,8 @@ std::vector<Eigen::Matrix3f> FeatureFactory::computeCovarianceMatrix()
 //	return eigenvals;
 //}
 
-//std::vector<Eigen::Vector3f> FeatureFactory::computeEigenValues(std::vector<Eigen::Matrix3f> covTensor)
-//{
-//	std::vector<Eigen::Vector3f> res;
-//	for (int i = 0; i < covTensor.size(); ++i)
-//	{
-//		Eigen::Vector3f eigv = computeEigenValues(covTensor[i]);
-//		res.push_back(eigv);
-//	}
-//	return res;
-//}
 
-void FeatureFactory::computeEigens(Eigen::Matrix3f &covMat, float &majorVal, float &middleVal, float &minorVal, 
+void FeatureFactory::computeEigens(const Eigen::Matrix3f &covMat, float &majorVal, float &middleVal, float &minorVal, 
 								   Eigen::Vector3f &majorAxis, Eigen::Vector3f &middleAxis, Eigen::Vector3f &minorAxis)
 {
 	Eigen::EigenSolver<Eigen::Matrix3f> es;
@@ -676,7 +440,7 @@ void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::MatrixXf &neighR,
 // note that some of the subvoxels may contain no points or
 // too few (less than 3) points to compute the covariance based
 // features, such cases should be treated carefully
-void FeatureFactory::partitionSpace(Eigen::MatrixXf &neigh)
+std::vector<std::vector<Eigen::VectorXf>> FeatureFactory::partitionSpace(Eigen::MatrixXf &neigh)
 {
 	// get the obb
 	Eigen::Vector3f minp(0, 0, 0);  // the minimal dimensions
@@ -710,6 +474,5 @@ void FeatureFactory::partitionSpace(Eigen::MatrixXf &neigh)
 		int idx = ijk0 + ijk1 * 3 + ijk2 * 9;
 		voxels[idx].push_back(neigh.row(i));
 	}
-	
-
+	return voxels;
 }

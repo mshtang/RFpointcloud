@@ -12,7 +12,8 @@ class FeatureFactory
 public:
 
 	FeatureFactory(Eigen::MatrixXf& neighborhood, Features feat);
-	float castProjection();
+	float project();
+	float castProjection(const Eigen::MatrixXf &voxel, int featType);
 
 	// find the k-nn of each point in this local neighborhood (here k is half the 
 	// number of points in the neighborhood) so that voxels of different sizes
@@ -21,25 +22,19 @@ public:
 	Eigen::MatrixXf getLocalDists() { return _localDists; }
 
 	//TODO: modify according to the final number of projections
-	static const int numOfPossibleProjections = 17;
-	std::vector<Eigen::Matrix3f> computeCovarianceMatrix();
-
-	//Eigen::Vector3f computeEigenValues(Eigen::Matrix3f covMat);
-
-	std::vector<Eigen::Vector3f> computeEigenValues(std::vector<Eigen::Matrix3f> covTensor);
-
-	void computeEigens(Eigen::Matrix3f & covMat, float & majorVal, float & middleVal, float & minorVal, Eigen::Vector3f & majorAxis, Eigen::Vector3f & middleAxis, Eigen::Vector3f & minorAxis);
+	static const int numOfPossibleProjections = 16;
+	
+	void computeEigens(const Eigen::Matrix3f &covMat, float & majorVal, float & middleVal, float & minorVal, Eigen::Vector3f & majorAxis, Eigen::Vector3f & middleAxis, Eigen::Vector3f & minorAxis);
 
 	void computeOBB(Eigen::MatrixXf & neigh, Eigen::MatrixXf &neighR, Eigen::Vector3f & obbMinP, Eigen::Vector3f & obbMaxP, Eigen::Matrix3f & obbR, Eigen::Vector3f & obbPos);
 
-	void partitionSpace(Eigen::MatrixXf & neigh);
+	std::vector<std::vector<Eigen::VectorXf>> partitionSpace(Eigen::MatrixXf & neigh);
 
 
 private:
-	void localNeighbors();
-	void buildVoxels();
+	void buildVoxels(std::vector<std::vector<Eigen::VectorXf>> &partitions);
 	std::vector<Eigen::VectorXf> averageVoxels();
-	float compareChannels(std::vector<Eigen::VectorXf> avg_voxels, int channelNo, bool convertToHSV=false);
+	float selectChannel(Eigen::VectorXf avg_voxel, int channelNo, bool convertToHSV=false);
 
 	Eigen::Matrix3f computeCovarianceMatrix(Eigen::MatrixXf neigh);
 
@@ -49,8 +44,6 @@ private:
 	Eigen::MatrixXi _localIndices;
 	Eigen::MatrixXf _localDists;
 	std::vector<Eigen::MatrixXf> _voxels;
-	
-	Eigen::Matrix<float, 4, 1> pt;
 	
 };
 
