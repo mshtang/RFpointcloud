@@ -126,28 +126,28 @@ def dataPreprocessor(datapath, labelpath):
             fmt='%1.3f %1.3f %1.3f %d %d %d %d')
         np.savetxt(filename + '_dropped.labels', dataframe[:, -1], fmt='%d')
     ##########################
-    # CHANGE THE RATIO HERE #
+    # CHANGE THE RATIO HERE  #
     ##########################
-    dataframe = downSample(dataframe, 0.1)
+    dataframe = downSample(dataframe, 10000)
     np.savetxt(
         filename + '_downsample.txt',
         dataframe[:, :-1],
         fmt='%1.3f %1.3f %1.3f %d %d %d %d')
     np.savetxt(filename + '_downsample.labels', dataframe[:, -1], fmt='%d')
 
-    trainData, trainLabel, valData, valLabel = trainValSplit(dataframe)
-    np.savetxt(
-        filename + '_trainData.txt',
-        trainData,
-        fmt='%1.3f %1.3f %1.3f %d %d %d %d')
-    np.savetxt(
-        filename + '_valData.txt',
-        valData,
-        fmt='%1.3f %1.3f %1.3f %d %d %d %d')
-    filename = os.path.splitext(labelpath)[0]
-    np.savetxt(filename + '_train.labels', trainLabel, fmt='%d')
-    np.savetxt(filename + '_val.labels', valLabel, fmt='%d')
-    return trainData, trainLabel, valData, valLabel
+    # trainData, trainLabel, valData, valLabel = trainValSplit(dataframe)
+    # np.savetxt(
+    #     filename + '_trainData.txt',
+    #     trainData,
+    #     fmt='%1.3f %1.3f %1.3f %d %d %d %d')
+    # np.savetxt(
+    #     filename + '_valData.txt',
+    #     valData,
+    #     fmt='%1.3f %1.3f %1.3f %d %d %d %d')
+    # filename = os.path.splitext(labelpath)[0]
+    # np.savetxt(filename + '_train.labels', trainLabel, fmt='%d')
+    # np.savetxt(filename + '_val.labels', valLabel, fmt='%d')
+    # return trainData, trainLabel, valData, valLabel
 
 
 def main():

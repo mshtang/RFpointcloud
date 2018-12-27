@@ -1,6 +1,7 @@
 #pragma once
 
-#include<vector>
+#include <vector>
+#include <algorithm>
 #include "C:/Eigen/Eigen/Dense"
 /***********************************************************************
 This header is used for converting a std::vector to an Eigen::vector
@@ -94,4 +95,19 @@ inline Eigen::VectorXf toHSV(Eigen::VectorXf point)
 	point(5) = s;
 	point(6) = v;
 	return point;
+}
+
+inline float findMedian(std::vector<float>& vec)
+{
+	std::vector<float> tmp(vec.begin(), vec.end());
+	int n = tmp.size() / 2;
+	std::nth_element(tmp.begin(), tmp.begin() + n, tmp.end());
+	if (tmp.size() % 2)
+		return tmp[n];
+	else
+	{
+		// if the vec size is even, the median is the average of the middle two
+		auto max_itr = std::max_element(tmp.begin(), tmp.begin() + n);
+		return (*max_itr + tmp[n]) / 2;
+	}
 }

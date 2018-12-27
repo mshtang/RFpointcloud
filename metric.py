@@ -37,14 +37,14 @@ def intersection_over_union(conf_mat):
 
 if __name__ == "__main__":
     conf_mat = build_conf_mat_from_file(
-        # r'./datasets/bildstein_station1_xyz_intensity_rgb_val.labels',
-        # r'./datasets/predict.labels'
-        r'./toy_dataset/testset_direct.labels',
-        r'./toy_dataset/testset_restoring.labels')
+        r'./datasets/bildstein_station1_xyz_intensity_rgb_downsample.labels',
+        r'./TestEnv/predicted.labels')
+    # r'./toy_dataset/testset_direct.labels',
+    # r'./toy_dataset/testset_restoring.labels')
     print(conf_mat)
     np.savetxt(
         # "./datasets/report.txt",
-        r'./toy_dataset/report.txt',
+        r'./TestEnv/report.txt',
         conf_mat,
         fmt='%8d',
         delimiter='\t',
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     ov_acc = overall_accuracy(conf_mat)
     with open(
             # r'./datasets/report.txt',
-            r'./toy_dataset/report.txt',
+            r'./TestEnv/report.txt',
             'a') as f:
         f.write("overall accuracy is: ")
         f.write("{:1.3f}".format(ov_acc))
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     np.round(IoU, 3, IoU)
     with open(
             # r'./datasets/report.txt',
-            r'./toy_dataset/report.txt',
+            r'./TestEnv/report.txt',
             'a') as f:
         f.write("\nIoU is:\n")
         f.write(str(IoU))

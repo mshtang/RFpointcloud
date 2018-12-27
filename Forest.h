@@ -41,6 +41,7 @@ public:
 	 * object will be instantiated will then will handle the search for nearest
 	 * neighbors. predictedLabels stores the predicted label for each data point.
 	 ***************************************************************************/
+	void predict(const char* testCloudPath, const char* testDataPath, Eigen::VectorXi &predictedLabels);
 	void predict(const char* testDataPath, Eigen::VectorXi &predictedLabels);
 	int predict(Eigen::MatrixXf &testNeigh);
 

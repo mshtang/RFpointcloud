@@ -24,9 +24,16 @@ public:
 	static const int numOfPossibleProjections = 17;
 	std::vector<Eigen::Matrix3f> computeCovarianceMatrix();
 
-	Eigen::Vector3f computeEigenValues(Eigen::Matrix3f covMat);
+	//Eigen::Vector3f computeEigenValues(Eigen::Matrix3f covMat);
 
 	std::vector<Eigen::Vector3f> computeEigenValues(std::vector<Eigen::Matrix3f> covTensor);
+
+	void computeEigens(Eigen::Matrix3f & covMat, float & majorVal, float & middleVal, float & minorVal, Eigen::Vector3f & majorAxis, Eigen::Vector3f & middleAxis, Eigen::Vector3f & minorAxis);
+
+	void computeOBB(Eigen::MatrixXf & neigh, Eigen::MatrixXf &neighR, Eigen::Vector3f & obbMinP, Eigen::Vector3f & obbMaxP, Eigen::Matrix3f & obbR, Eigen::Vector3f & obbPos);
+
+	void partitionSpace(Eigen::MatrixXf & neigh);
+
 
 private:
 	void localNeighbors();
@@ -42,7 +49,7 @@ private:
 	Eigen::MatrixXi _localIndices;
 	Eigen::MatrixXf _localDists;
 	std::vector<Eigen::MatrixXf> _voxels;
-
+	
 	Eigen::Matrix<float, 4, 1> pt;
 	
 };

@@ -3,7 +3,6 @@
 #include "FeatureFactory.h"
 #include <iostream>
 #include "utils.h"
-#include <algorithm>
 
 Node::Node():
 	_isLeaf(false),
@@ -91,8 +90,7 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 			castResults.push_back(castResult);
 		}
 		// find the median of all the projections
-		std::nth_element(castResults.begin(), castResults.begin() + castResults.size() / 2, castResults.end());
-		feat._thresh = castResults[castResults.size() / 2];
+		feat._thresh = findMedian(castResults);
 		for (int j = 0; j < numSamples; ++j)
 		{
 			if (castResults[j] < feat._thresh)
@@ -149,7 +147,7 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 	}
 }
 
-// make the most frequent class as the class of this leaf node
+// create a leaf and update the class posterior
 void Node::createLeaf(std::vector<float> priorDistr)
 {
 	_class = 0;
