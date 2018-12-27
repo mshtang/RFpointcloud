@@ -79,7 +79,9 @@ int Tree::searchNode(Eigen::MatrixXf &testNeigh, int nodeId)
 	{
 		Features testFeat = _treeNodes[nodeId]->getBestFeature();
 		FeatureFactory testNodeFeat(testNeigh,testFeat);
-		if (testNodeFeat.castProjection() < testFeat._thresh)
+		float testResult = 0.0f;
+		testNodeFeat.project(testResult);
+		if (testResult < testFeat._thresh)
 		{
 			return searchNode(testNeigh, nodeId * 2 + 1);
 		}

@@ -18,18 +18,19 @@ void FeatureFactory::buildVoxels(std::vector<std::vector<Eigen::VectorXf>> &part
 		int idx = _feat._pointId[i];
 		if (partitions[idx].size() == 0)
 		{
-			Eigen::MatrixXf tmp;
+			Eigen::MatrixXf tmp(1,1);
 			tmp << 0;
 			_voxels.push_back(tmp);
 		}
 		else if (partitions[idx].size() == 1)
 		{
-			_voxels.push_back(partitions[idx][0]);
+			_voxels.push_back(partitions[idx][0].transpose());
 		}
 		else
 		{
 			std::vector<Eigen::VectorXf> points = partitions[idx];
-			Eigen::MatrixXf voxel(points.size(), 7);
+			int d = points[0].size();
+			Eigen::MatrixXf voxel(points.size(), d);
 			for (int j = 0; j < points.size(); ++j)
 				voxel.row(j) = points[j].transpose();
 			_voxels.push_back(voxel);
@@ -49,83 +50,254 @@ std::vector<Eigen::VectorXf> FeatureFactory::averageVoxels()
 	return voxels_avg;
 }
 
-float FeatureFactory::project()
+//bool FeatureFactory::project(float &res)
+//{
+//	std::vector<std::vector<Eigen::VectorXf>> partitions;
+//	partitions = partitionSpace(_neighborhood);
+//	buildVoxels(partitions);
+//	res = 0.0f;
+//	// one-voxel comparison
+//	if (_voxels.size() == 1)
+//	{
+//		// if the voxel has no points
+//		if (_voxels[0].size() == 1)
+//		{
+//			res = -1000.0f;
+//			return false;
+//		}
+//		else // compare the voxel to the neighborhood center point
+//		{
+//			float voxelValue = 0;
+//			float centerPointValue = 0;
+//			bool success1 = true;
+//			bool success2 = true;
+//			// sometimes projection cannot be performed (e.g. some _featTypes require
+//			// at least three points)
+//			success1 = castProjection(_voxels[0], _feat._featType, voxelValue);
+//			if (!success1)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			success2 = castProjection(_neighborhood.row(0), _feat._featType, centerPointValue);
+//			if (!success2)
+//			{ 
+//				res = -1000.0f;
+//				return false; 
+//			}
+//			res = centerPointValue - voxelValue;
+//			return true;
+//		}
+//	}
+//	// two-voxel comparison
+//	else if (_voxels.size() == 2)
+//	{
+//		// if both voxels are not empty
+//		if (_voxels[0].size() != 1 and _voxels[1].size() != 1)
+//		{
+//			float voxelValue1 = 0.0f, voxelValue2 = 0.0f;
+//			bool success1 = castProjection(_voxels[0], _feat._featType, voxelValue1);
+//			if (!success1)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			bool success2 = castProjection(_voxels[1], _feat._featType, voxelValue2);
+//			if (!success2)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			res =  voxelValue1 - voxelValue2;
+//			return true;
+//		}
+//		// downgrade to 1 voxel case
+//		// first voxel is not empty but second is
+//		else if (_voxels[0].size() != 1 and _voxels[1].size() == 1)
+//		{
+//			float voxelValue = 0.0f;
+//			float centerPointValue = 0.0f;
+//			bool success1 = castProjection(_voxels[0], _feat._featType, voxelValue);
+//			if (!success1)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			bool success2 = castProjection(_neighborhood.row(0), _feat._featType, centerPointValue);
+//			if (!success2)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			res = centerPointValue - voxelValue;
+//			return true;
+//		}
+//		// second voxel is not empty but first is
+//		else if (_voxels[1].size() != 1 and _voxels[0].size()==1)
+//		{
+//			float voxelValue = 0.0f;
+//			float centerPointValue = 0.0f;
+//			bool success1 = castProjection(_voxels[1], _feat._featType, voxelValue);
+//			if (!success1)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			bool success2 = castProjection(_neighborhood.row(0), _feat._featType, centerPointValue);
+//			if (!success2)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			res = centerPointValue - voxelValue;
+//			return true;
+//		}
+//		// both voxels are empty
+//		else
+//		{
+//			res = -1000.0f;
+//			return false;
+//		}
+//	}
+//	// four voxel comparison
+//	else
+//	{
+//		// if all voxels are not empty
+//		if (_voxels[0].size() != 1 and _voxels[1].size() != 1
+//			and _voxels[2].size() != 1 and _voxels[3].size() != 1)
+//		{
+//			float voxelValue1 = 0.0f, voxelValue2 = 0.0f, voxelValue3 = 0.0f, voxelValue4 = 0.0f;
+//			bool success1 = castProjection(_voxels[0], _feat._featType, voxelValue1);
+//			if (!success1)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			bool success2 = castProjection(_voxels[1], _feat._featType, voxelValue2);
+//			if (!success2)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			bool success3 = castProjection(_voxels[2], _feat._featType, voxelValue3);
+//			if (!success3)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			bool success4 = castProjection(_voxels[3], _feat._featType, voxelValue4);
+//			if (!success4)
+//			{
+//				res = -1000.0f;
+//				return false;
+//			}
+//			res =  (voxelValue1 - voxelValue2) - (voxelValue3 - voxelValue4);
+//			return true;
+//		}
+//		// special cases
+//		else
+//		{
+//			res = -1000.0f;
+//			return false;
+//		}
+//	}
+//}
+
+bool FeatureFactory::project(float &res)
 {
 	std::vector<std::vector<Eigen::VectorXf>> partitions;
 	partitions = partitionSpace(_neighborhood);
 	buildVoxels(partitions);
-	float testResult = 0.0f;
-	// one voxel comparison
+	res = 0.0f;
+	// one-voxel comparison
 	if (_voxels.size() == 1)
 	{
-		// if the voxel has no points
-		if (_voxels[0].size() == 1)
-			return -1;
+		if (_voxels[0].size() == 1) // empty voxel
+		{
+			res = -1000.0;
+			return false;
+		}
+		// voxel not empty but no enough points for eigen based features
+		else if (_voxels[0].rows() < 3 and _feat._featType >= 9)
+		{
+			res = -1000.0;
+			return false;
+		}
 		else
 		{
-			float voxelValue = castProjection(_voxels[0], _feat._featType);
-			float centerPointValue = castProjection(_neighborhood.row(0), _feat._featType);
-			return centerPointValue - voxelValue;
+			float res1 = 0.0f, res2 = 0.0f;
+			castProjection(_voxels[0], _feat._featType, res1);
+			castProjection(_neighborhood, _feat._featType, res2);
+			res = res1 - res2;
+
 		}
 	}
-	// two voxel comparison
+	// two-voxel comparion
 	else if (_voxels.size() == 2)
 	{
-		// if both voxels are not empty
-		if (_voxels[0].size() != 1 and _voxels[1].size() != 1)
+		if (_voxels[0].size() != 1 and _voxels[1].size() != 1) // both are not empty
 		{
-			float voxelValue1 = castProjection(_voxels[0], _feat._featType);
-			float voxelValue2 = castProjection(_voxels[1], _feat._featType);
-			return voxelValue1 - voxelValue2;
+			if ((_voxels[0].rows() < 3 or _voxels[1].rows() < 3) and _feat._featType >= 9)
+			{
+				res = -1000.0;
+				return false;
+			}
+			else
+			{
+				float res1 = 0.0f, res2 = 0.0f;
+				castProjection(_voxels[0], _feat._featType, res1);
+				castProjection(_voxels[1], _feat._featType, res2);
+				res = res1 - res2;
+			}
 		}
-		// downgrade to 1 voxel case
-		else if (_voxels[0].size() == 1)
-		{
-			float voxelValue = castProjection(_voxels[1], _feat._featType);
-			float centerPointValue = castProjection(_neighborhood.row(0), _feat._featType);
-			return centerPointValue - voxelValue;
-		}
-		else if (_voxels[1].size() == 1)
-		{
-			float voxelValue = castProjection(_voxels[0], _feat._featType);
-			float centerPointValue = castProjection(_neighborhood.row(0), _feat._featType);
-			return centerPointValue - voxelValue;
-		}
-		// both voxels are empty
-		else return -1;
-	}
-	// four voxel comparison
-	else
-	{
-		// if all voxels are not empty
-		if (_voxels[0].size() != 1 and _voxels[1].size() != 1
-			and _voxels[2].size() != 1 and _voxels[3].size() != 1)
-		{
-			float voxelValue1 = castProjection(_voxels[0], _feat._featType);
-			float voxelValue2 = castProjection(_voxels[1], _feat._featType);
-			float voxelValue3 = castProjection(_voxels[2], _feat._featType);
-			float voxelValue4 = castProjection(_voxels[3], _feat._featType);
-			return (voxelValue1 - voxelValue2) - (voxelValue3 - voxelValue4);
-		}
-		// special cases
 		else
 		{
-			return -1;
+			res = -1000.0;
+			return false;
 		}
 	}
+	// four-voxel comparion
+	else
+	{
+		if (_voxels[0].size() != 1 and _voxels[1].size() != 1 and _voxels[2].size()!=1 and _voxels[3].size()!=1) // all are not empty
+		{
+			if ((_voxels[0].rows() < 3 or _voxels[1].rows() < 3 or _voxels[2].rows()<3 or _voxels[3].rows()<3) and _feat._featType >= 9)
+			{
+				res = -1000.0;
+				return false;
+			}
+			else
+			{
+				float res1 = 0.0f, res2 = 0.0f, res3 = 0.0f, res4 = 0.0f;
+				castProjection(_voxels[0], _feat._featType, res1);
+				castProjection(_voxels[1], _feat._featType, res2);
+				castProjection(_voxels[2], _feat._featType, res3);
+				castProjection(_voxels[3], _feat._featType, res4);
+				res = (res1 - res2) - (res3 - res4);
+			}
+		}
+		else
+		{
+			res = -1000.0f;
+			return false;
+		}
+	}
+	return true;
 }
-float FeatureFactory::castProjection(const Eigen::MatrixXf &voxel, int featType)
-{
 
-	float testResult = 0;
+// a voxel may contain only one or two points, in which case, projections of featType greater than
+// 8 (eigen value based projection) can not be performed, a flase flag will be returned.
+bool FeatureFactory::castProjection(const Eigen::MatrixXf &voxel, int featType, float &testResult)
+{
+	testResult = 0.0f;
 
 	if (_feat._featType <= 8) // radiometric features
 	{
-		Eigen::MatrixXf avg_voxel;
+		Eigen::VectorXf avg_voxel;
 		if (voxel.rows() != 1)
-			avg_voxel = voxel.colwise.mean();
+			avg_voxel = voxel.colwise().mean();
 		else
-			avg_voxel = voxel;
+			avg_voxel = voxel.row(0);
 
 		// red channel
 		if (featType == 0)
@@ -141,15 +313,15 @@ float FeatureFactory::castProjection(const Eigen::MatrixXf &voxel, int featType)
 
 		// h value
 		else if (featType == 3)
-			testResult = selectChannel(avg_voxel, 4, false);
+			testResult = selectChannel(avg_voxel, 4, true);
 
 		// s value
 		else if (featType == 4)
-			testResult = selectChannel(avg_voxel, 5, false);
+			testResult = selectChannel(avg_voxel, 5, true);
 
 		// v value
 		else if (featType == 5)
-			testResult = selectChannel(avg_voxel, 6, false);
+			testResult = selectChannel(avg_voxel, 6, true);
 
 		// x
 		else if (featType == 6)
@@ -160,16 +332,13 @@ float FeatureFactory::castProjection(const Eigen::MatrixXf &voxel, int featType)
 			testResult = selectChannel(avg_voxel, 1);
 
 		// z
-		else if (featType == 8)
+		else // if (featType == 8)
 			testResult = selectChannel(avg_voxel, 2);
 	}
 	// features based on local voxel covariance matrices 
 	// (eigenvalue-based 3d geometric features)
-	else if (featType >= 9 and featType <= 15)
+	else // if (featType >= 9 and featType <= 26)
 	{
-		if (voxel.rows() == 1 or voxel.rows() == 2)
-			return -1;
-		
 		// eigenvalues
 		float eigv0 = 0;
 		float eigv1 = 0;
@@ -179,38 +348,151 @@ float FeatureFactory::castProjection(const Eigen::MatrixXf &voxel, int featType)
 		Eigen::Vector3f vec1;
 		Eigen::Vector3f vec2;
 
-		computeEigens(voxel, eigv0, eigv1, eigv2, vec0, vec1, vec2);
+		Eigen::MatrixXf covMat = computeCovarianceMatrix(voxel);
+		computeEigens(covMat, eigv0, eigv1, eigv2, vec0, vec1, vec2);
 		
 		// compare linearity
 		if (featType == 9)
-			return (eigv0 - eigv1) / eigv0;
+			testResult = (eigv0 - eigv1) / eigv0;
 
 		// compare planarity
 		else if (featType == 10)
-			return (eigv1 - eigv2) / eigv0;
+			testResult = (eigv1 - eigv2) / eigv0;
 
 		// compare scattering
 		else if (featType == 11)
-			return eigv2 / eigv0;
+			testResult = eigv2 / eigv0;
 
 		// omnivariance
 		else if (featType == 12)
-			return std::pow(eigv0*eigv1*eigv2, 1.0 / 3.0);
+			testResult = std::pow(eigv0*eigv1*eigv2, 1.0 / 3.0);
 
 		// anisotropy
 		else if (featType == 13)
-			return (eigv0 - eigv2) / eigv0;
+			testResult = (eigv0 - eigv2) / eigv0;
 
 		// eigenentropy
 		else if (featType == 14)
-			return -(eigv0*std::log(eigv0) + eigv1 * std::log(eigv1) + eigv2 * std::log(eigv2));
+			testResult = -(eigv0*std::log(eigv0) + eigv1 * std::log(eigv1) + eigv2 * std::log(eigv2));
 
 		// change of curvature
-		else // _feat._featType == 15
-			return eigv2 / (eigv0 + eigv1 + eigv2);
+		else if (_feat._featType == 15)
+			testResult = eigv2 / (eigv0 + eigv1 + eigv2);
+		// 1st eigenvector verticality
+		// = |pi/2 - arccos(eigenvec0[2])|
+		else if (_feat._featType == 16)
+			testResult = fabs(std::_Pi*0.5 - std::acos(vec0(2)));
+		// 3rd eigenvector verticality
+		else if (_feat._featType == 17)
+			testResult = fabs(std::_Pi*0.5 - std::acos(vec2(2)));
+		// absolute moment
+		// 1/N*|sumof((p-p_0).dot(eigenvector0)^1)|
+		else if (_feat._featType == 18)
+		{
+			int n = voxel.rows();
+			Eigen::VectorXf meanval = voxel.colwise().mean();
+			for (int i = 0; i < n; ++i)
+			{
+				testResult += ((voxel.row(i).x() - meanval.x()) * vec0.x()
+							   + (voxel.row(i).y() - meanval.x()) * vec0.y()
+							   + (voxel.row(i).z() - meanval.x()) * vec0.z());
+
+			}
+			testResult = fabs(testResult) / n;
+		}
+		else if (_feat._featType == 19)
+		{
+			int n = voxel.rows();
+			Eigen::VectorXf meanval = voxel.colwise().mean();
+			for (int i = 0; i < n; ++i)
+			{
+				testResult += ((voxel.row(i).x() - meanval.x()) * vec1.x()
+							   + (voxel.row(i).y() - meanval.x()) * vec1.y()
+							   + (voxel.row(i).z() - meanval.x()) * vec1.z());
+
+			}
+			testResult = fabs(testResult) / n;
+		}
+		else if (_feat._featType == 20)
+		{
+			int n = voxel.rows();
+			Eigen::VectorXf meanval = voxel.colwise().mean();
+			for (int i = 0; i < n; ++i)
+			{
+				testResult += ((voxel.row(i).x() - meanval.x()) * vec2.x()
+							   + (voxel.row(i).y() - meanval.x()) * vec2.y()
+							   + (voxel.row(i).z() - meanval.x()) * vec2.z());
+
+			}
+			testResult = fabs(testResult) / n;
+		}
+		// second order moment
+		else if (_feat._featType == 21)
+		{
+			int n = voxel.rows();
+			Eigen::VectorXf meanval = voxel.colwise().mean();
+			for (int i = 0; i < n; ++i)
+			{
+				testResult += std::pow(((voxel.row(i).x() - meanval.x()) * vec0.x()
+										+ (voxel.row(i).y() - meanval.x()) * vec0.y()
+										+ (voxel.row(i).z() - meanval.x()) * vec0.z()), 2);
+
+			}
+			testResult /= n;
+		}
+		else if (_feat._featType == 22)
+		{
+			int n = voxel.rows();
+			Eigen::VectorXf meanval = voxel.colwise().mean();
+			for (int i = 0; i < n; ++i)
+			{
+				testResult += std::pow(((voxel.row(i).x() - meanval.x()) * vec1.x()
+										+ (voxel.row(i).y() - meanval.x()) * vec1.y()
+										+ (voxel.row(i).z() - meanval.x()) * vec1.z()), 2);
+
+			}
+			testResult /= n;
+		}
+		else if (_feat._featType == 23)
+		{
+			int n = voxel.rows();
+			Eigen::VectorXf meanval = voxel.colwise().mean();
+			for (int i = 0; i < n; ++i)
+			{
+				testResult += std::pow(((voxel.row(i).x() - meanval.x()) * vec2.x()
+										+ (voxel.row(i).y() - meanval.x()) * vec2.y()
+										+ (voxel.row(i).z() - meanval.x()) * vec2.z()), 2);
+
+			}
+			testResult /= n;
+		}
+		// vertical moment
+		// = 1/N * |sumof(p-p_0).dot([0, 0, 1])^1)|
+		else if (_feat._featType == 24)
+		{
+			int n = voxel.rows();
+			Eigen::VectorXf meanval = voxel.colwise().mean();
+			for (int i = 0; i < n; ++i)
+			{
+				testResult += (voxel.row(i).z() - meanval.z());
+			}
+			testResult/= n;
+		}
+		else if (_feat._featType == 25)
+		{
+			int n = voxel.rows();
+			Eigen::VectorXf meanval = voxel.colwise().mean();
+			for (int i = 0; i < n; ++i)
+			{
+				testResult += ((voxel.row(i).z() - meanval.z())
+							   *(voxel.row(i).z() - meanval.z()));
+			}
+			testResult /= n;
+		}
+		else //if (_feat._featType == 26)
+			testResult = eigv0 + eigv1 + eigv2;
 	}
-	else
-		return -1;
+	return true;
 }
 
 
@@ -352,14 +634,13 @@ void FeatureFactory::computeEigens(const Eigen::Matrix3f &covMat, float &majorVa
 }
 
 // compute the axis algined orientated bounding box
-void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::MatrixXf &neighR, Eigen::Vector3f &obbMinP, Eigen::Vector3f &obbMaxP, 
-								Eigen::Matrix3f &obbR, Eigen::Vector3f &obbPos)
+void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::MatrixXf &neighR, Eigen::Vector3f &obbMinP, Eigen::Vector3f &obbMaxP)
 {
-	Eigen::MatrixXf coords = neigh.leftCols(3);
-	Eigen::Matrix3f covMat = computeCovarianceMatrix(coords);
-	Eigen::Vector3f meanVal = coords.colwise().mean();
+	
+	Eigen::Matrix3f covMat = computeCovarianceMatrix(neigh);
+	Eigen::VectorXf meanVal = neigh.colwise().mean();
 
-	// get the eigenvalues and eigenvector of the covmat
+	// get the eigenvalues and eigenvector of the covmat 
 	float majorVal = 0, midVal = 0, minorVal = 0;
 	Eigen::Vector3f majorAxis(0, 0, 0);
 	Eigen::Vector3f midAxis(0, 0, 0);
@@ -385,17 +666,17 @@ void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::MatrixXf &neighR,
 	// plus the translation of origin of {B} to {A}
 	// suppose {A} is the universal frame and {B} is the local frame
 	// then P_B = R_AB^-1 * (P_A - P_AB) = R_AB^T * (P_A - P_AB).
-	for (int i = 0; i < coords.rows(); ++i)
+	for (int i = 0; i < neigh.rows(); ++i)
 	{
-		float x = (coords(i, 0) - meanVal(0))*majorAxis(0) 
-				+ (coords(i, 1) - meanVal(1))*midAxis(0) 
-				+ (coords(i, 2) - meanVal(2))*minorAxis(0);
-		float y = (coords(i, 0) - meanVal(0))*majorAxis(1)
-				+ (coords(i, 1) - meanVal(1))*midAxis(1)
-				+ (coords(i, 2) - meanVal(2))*minorAxis(1);
-		float z = (coords(i, 0) - meanVal(0))*majorAxis(2)
-				+ (coords(i, 1) - meanVal(1))*midAxis(2)
-				+ (coords(i, 2) - meanVal(2))*minorAxis(2);
+		float x = (neigh(i, 0) - meanVal(0))*majorAxis(0) 
+				+ (neigh(i, 1) - meanVal(1))*midAxis(0) 
+				+ (neigh(i, 2) - meanVal(2))*minorAxis(0);
+		float y = (neigh(i, 0) - meanVal(0))*majorAxis(1)
+				+ (neigh(i, 1) - meanVal(1))*midAxis(1)
+				+ (neigh(i, 2) - meanVal(2))*minorAxis(1);
+		float z = (neigh(i, 0) - meanVal(0))*majorAxis(2)
+				+ (neigh(i, 1) - meanVal(1))*midAxis(2)
+				+ (neigh(i, 2) - meanVal(2))*minorAxis(2);
 
 		neighR(i, 0) = x;
 		neighR(i, 1) = y;
@@ -417,10 +698,10 @@ void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::MatrixXf &neighR,
 	}
 
 	// rotation matrix
-	obbR.setZero();
+	/*obbR.setZero();
 	obbR << majorAxis(0), midAxis(0), minorAxis(0),
 			majorAxis(1), midAxis(1), minorAxis(1),
-			majorAxis(2), midAxis(2), minorAxis(2);
+			majorAxis(2), midAxis(2), minorAxis(2);*/
 
 	// translation vector
 	Eigen::Vector3f trans((obbMaxP.x() - obbMinP.x()) / 2.0,
@@ -430,8 +711,8 @@ void FeatureFactory::computeOBB(Eigen::MatrixXf &neigh, Eigen::MatrixXf &neighR,
 	neighR.leftCols(3).rowwise() -= obbMinP.transpose();
 	obbMaxP -= obbMinP;
 	obbMinP -= obbMinP;
-	obbPos << 0, 0, 0;
-	obbPos = meanVal + obbR * trans;
+	/*obbPos << 0, 0, 0;
+	obbPos = meanVal + obbR * trans;*/
 }
 
 
@@ -449,28 +730,31 @@ std::vector<std::vector<Eigen::VectorXf>> FeatureFactory::partitionSpace(Eigen::
 	rot.setZero();
 	Eigen::MatrixXf neighR;
 	Eigen::Vector3f pos(0, 0, 0); // translation matrix
-	computeOBB(neigh, neighR, minp, maxp, rot, pos);
+	computeOBB(neigh, neighR, minp, maxp);
 	// divide the length/width/height of the bounding box into three parts
 	// that is the dimensions of the small cubes
 	// to avoid divisions in successive steps, the inverse of each is computed
-	float inverse_dlength = 3.0f/(maxp(0) - minp(0))-1e-5;
-	float inverse_dwidth = 3.0f/(maxp(1) - minp(1))-1e-5;
-	float inverse_dheight = 3.0f/(maxp(2) - minp(2))-1e-5;
+	float inverse_dlength = 3.0f/(maxp(0) - minp(0));
+	float inverse_dwidth = 3.0f/(maxp(1) - minp(1));
+	float inverse_dheight = 3.0f/(maxp(2) - minp(2));
 	// compute the minimal/maximal bounding box values
-	Eigen::Vector3i minbb(0, 0, 0);
-	Eigen::Vector3i maxbb(0, 0, 0);
-	minbb(0) = static_cast<int>(floor(minp(0) * inverse_dlength));
+	//Eigen::Vector3i minbb(0, 0, 0);
+	//Eigen::Vector3i maxbb(0, 0, 0);
+	//minbb(0) = static_cast<int>(floor(minp(0) * inverse_dlength));
 	//maxbb(0) = static_cast<int>(floor(maxp(0) * inverse_dlength));
-	minbb(1) = static_cast<int>(floor(minp(1) * inverse_dwidth));
+	//minbb(1) = static_cast<int>(floor(minp(1) * inverse_dwidth));
 	//maxbb(1) = static_cast<int>(floor(maxp(1) * inverse_dwidth));
-	minbb(2) = static_cast<int>(floor(minp(2) * inverse_dheight));
+	//minbb(2) = static_cast<int>(floor(minp(2) * inverse_dheight));
 	//maxbb(2) = static_cast<int>(floor(maxp(2) * inverse_dheight));
 	std::vector<std::vector<Eigen::VectorXf>> voxels(27);
 	for (int i = 0; i < neigh.rows(); ++i)
 	{
 		int ijk0 = static_cast<int>(floor(neighR(i, 0)*inverse_dlength));
+		if (ijk0 >= 3) ijk0 = 2;
 		int ijk1 = static_cast<int>(floor(neighR(i, 1)*inverse_dwidth));
+		if (ijk1 >= 3) ijk1 = 2;
 		int ijk2 = static_cast<int>(floor(neighR(i, 2)*inverse_dheight));
+		if (ijk2 >= 3) ijk2 = 2;
 		int idx = ijk0 + ijk1 * 3 + ijk2 * 9;
 		voxels[idx].push_back(neigh.row(i));
 	}

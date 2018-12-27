@@ -128,12 +128,12 @@ def dataPreprocessor(datapath, labelpath):
     ##########################
     # CHANGE THE RATIO HERE  #
     ##########################
-    dataframe = downSample(dataframe, 10000)
+    dataframe = downSample(dataframe, 1000)
     np.savetxt(
-        filename + '_downsample.txt',
+        filename + '_downsample_100.txt',
         dataframe[:, :-1],
         fmt='%1.3f %1.3f %1.3f %d %d %d %d')
-    np.savetxt(filename + '_downsample.labels', dataframe[:, -1], fmt='%d')
+    np.savetxt(filename + '_downsample_100.labels', dataframe[:, -1], fmt='%d')
 
     # trainData, trainLabel, valData, valLabel = trainValSplit(dataframe)
     # np.savetxt(

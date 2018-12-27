@@ -9,46 +9,44 @@
 
 int main(int argc, char **argv)
 {
-	bool functionDebug = true;
+	bool functionDebug = false;
 	if (functionDebug)
 	{
 		InOut ioObj;
 		Eigen::MatrixXf neigh;
 		ioObj.readPoints("./TestEnv/neighborhood1.txt", neigh);
 		Features feat;
-		feat._featType = 1;
-		feat._numVoxels = 2;
-		feat._pointId.push_back(3);
+		feat._featType = 24;
+		feat._numVoxels = 1;
 		feat._pointId.push_back(5);
-		feat._voxelSize.push_back(10);
-		feat._voxelSize.push_back(10);
-		FeatureFactory featFact(neigh, feat);
-		featFact.partitionSpace(neigh);
+		FeatureFactory nodeFeat(neigh, feat);
+		float result = 0.0f;
+		bool flag = nodeFeat.project(result);
 	}
 	else
 	{
 		// change here to enter debug mode
-		bool debug = true;
+		bool debug = false;
 		// to control whether training from scratch or use a pretrained model
-		bool directTrain = true;
+		bool directTrain = false;
 
 		// give respective dataset/label path
-		std::string trainSetPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample.txt";
-		std::string trainLabelPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample.labels";
-		std::string valSetPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample.txt";
-		std::string valLabelPath = "./TestEnv/predicted.labels";
-		std::string cloudPath = "./datasets/bildstein_station1_xyz_intensity_rgb_dropped.txt";
+		std::string trainSetPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample_1000.txt";
+		std::string trainLabelPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample_1000.labels";
+		std::string valSetPath = "./datasets/testsets/bildstein3_part_2.txt";
+		std::string valLabelPath = "./Results/exp4predicted.labels";
+		std::string cloudPath = "./datasets/other datasets/bildstein_station3_xyz_intensity_rgb_dropped.txt";
 		//std::string truthPath = "./datasets/bildstein_station1_xyz_intensity_rgb_dropped.labels";
 		// if training the real dataset, give a path to save the model
-		std::string modelPath = "./models/test.model";
+		std::string modelPath = "./models/exp3.model";
 		// statistics file of the model
-		std::string statsPath = "./models/test_stats.txt";
+		std::string statsPath = "./models/exp3stats.txt";
 
 		// parameters to modify
-		int numTrees = 10;
-		int maxDepth = 10;
+		int numTrees = 50;
+		int maxDepth = 20;
 		int minSamplesPerLeaf = 20;
-		int featsPerNode = 5;
+		int featsPerNode = 30;
 
 		if (debug)
 		{
@@ -59,7 +57,6 @@ int main(int argc, char **argv)
 			valSetPath = "./TestEnv/downsampled.txt";
 			valLabelPath = "./TestEnv/predict.labels";
 			cloudPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample.txt";
-			//truthPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample.labels";
 			numTrees = 2;
 			maxDepth = 5;
 			minSamplesPerLeaf = 5;

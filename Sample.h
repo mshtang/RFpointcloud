@@ -39,11 +39,11 @@ struct Features{
 	int _featType;
 	float _thresh=0.0;
 	// to ensure there are at least 10 points in each voxel, so that 3d features can be calculated
-	int minSamples = static_cast<int>(0.1*InOut::numOfNN);
+	/*int minSamples = static_cast<int>(0.1*InOut::numOfNN);
 	const int minSamplesPerVoxel = minSamples > 10 ? minSamples : 10;
 	int maxSamples = static_cast<int>(0.5*InOut::numOfNN);
 	int tmpMaxSamples = (maxSamples > minSamplesPerVoxel + 10) ? maxSamples : (minSamplesPerVoxel + 10);
-	const int maxSamplesPerVoxel = tmpMaxSamples > InOut::numOfNN ? InOut::numOfNN : tmpMaxSamples;
+	const int maxSamplesPerVoxel = tmpMaxSamples > InOut::numOfNN ? InOut::numOfNN : tmpMaxSamples;*/
 };
 
 
@@ -156,10 +156,10 @@ public:
 		candidates(population);
 
 		std::random_device rd;
-		 std::mt19937 gen(rd());
+		std::mt19937 gen(rd());
 		// DEBUG to uncomment
 		// for debugging purposes, to generate deterministic numbers
-		// std::mt19937 gen(123);
+		//std::mt19937 gen(123456);
 		std::shuffle(population.begin(), population.end(), gen);
 		std::vector<int> samples(population.begin(), population.begin() + _sampleSize);
 		return samples;

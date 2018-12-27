@@ -30,5 +30,5 @@ public:
 
 	void writeToDisk(const char * filename, Eigen::VectorXi & data);
 
-	static const size_t numOfNN = 50;
+	static const size_t numOfNN = 100;
 };
