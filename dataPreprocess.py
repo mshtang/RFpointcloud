@@ -128,12 +128,13 @@ def dataPreprocessor(datapath, labelpath):
     ##########################
     # CHANGE THE RATIO HERE  #
     ##########################
-    dataframe = downSample(dataframe, 1000)
+    dataframe = downSample(dataframe, 5000)
     np.savetxt(
-        filename + '_downsample_100.txt',
+        filename + '_downsample_5000.txt',
         dataframe[:, :-1],
         fmt='%1.3f %1.3f %1.3f %d %d %d %d')
-    np.savetxt(filename + '_downsample_100.labels', dataframe[:, -1], fmt='%d')
+    np.savetxt(
+        filename + '_downsample_5000.labels', dataframe[:, -1], fmt='%d')
 
     # trainData, trainLabel, valData, valLabel = trainValSplit(dataframe)
     # np.savetxt(
@@ -153,9 +154,8 @@ def dataPreprocessor(datapath, labelpath):
 def main():
     print("Running ...")
     start = time.time()
-    dataPreprocessor(
-        r'./datasets/bildstein_station1_xyz_intensity_rgb.txt',
-        r'./datasets/bildstein_station1_xyz_intensity_rgb.labels')
+    dataPreprocessor(r'./TestEnv/synthetic_testset2.txt',
+                     r'./TestEnv/synthetic_testset2.labels')
     # r'./datasets/for_script_testing.txt',
     # r'./datasets/for_script_testing.labels')
     end = time.time()

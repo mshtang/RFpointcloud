@@ -28,24 +28,25 @@ int main(int argc, char **argv)
 		// change here to enter debug mode
 		bool debug = false;
 		// to control whether training from scratch or use a pretrained model
-		bool directTrain = false;
+		bool directTrain = true;
 
 		// give respective dataset/label path
-		std::string trainSetPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample_1000.txt";
-		std::string trainLabelPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample_1000.labels";
-		std::string valSetPath = "./datasets/testsets/bildstein3_part_2.txt";
-		std::string valLabelPath = "./Results/exp4predicted.labels";
-		std::string cloudPath = "./datasets/other datasets/bildstein_station3_xyz_intensity_rgb_dropped.txt";
+		std::string trainSetPath = "./TestEnv/synthetic_trainset2_downsample_1000.txt";
+		std::string trainLabelPath = "./TestEnv/synthetic_trainset2_downsample_1000.labels";
+		std::string trainCloudPath = "./TestEnv/synthetic_trainset2_dropped.txt";
+		std::string testSetPath = "./TestEnv/synthetic_testset2_downsample_5000.txt";
+		std::string testLabelPath = "./TestEnv/synthetic_testset2_downsample_5000_predicted.labels";
+		std::string testCloudPath = "./TestEnv/synthetic_testset2_dropped.txt";
 		//std::string truthPath = "./datasets/bildstein_station1_xyz_intensity_rgb_dropped.labels";
 		// if training the real dataset, give a path to save the model
-		std::string modelPath = "./models/exp3.model";
+		std::string modelPath = "./models/exp7.model";
 		// statistics file of the model
-		std::string statsPath = "./models/exp3stats.txt";
+		std::string statsPath = "./models/exp7stats.txt";
 
 		// parameters to modify
-		int numTrees = 50;
-		int maxDepth = 20;
-		int minSamplesPerLeaf = 20;
+		int numTrees = 20;
+		int maxDepth = 10;
+		int minSamplesPerLeaf = 5;
 		int featsPerNode = 30;
 
 		if (debug)
@@ -54,9 +55,10 @@ int main(int argc, char **argv)
 			statsPath = "./TestEnv/test_stats.txt";
 			trainSetPath = "./TestEnv/downsampled.txt";
 			trainLabelPath = "./TestEnv/downsampled.labels";
-			valSetPath = "./TestEnv/downsampled.txt";
-			valLabelPath = "./TestEnv/predict.labels";
-			cloudPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample.txt";
+			testSetPath = "./TestEnv/downsampled.txt";
+			testLabelPath = "./TestEnv/predict.labels";
+			trainCloudPath = "./datasets/bildstein_station1_xyz_intensity_rgb_downsample.txt";
+			testCloudPath = trainCloudPath;
 			numTrees = 2;
 			maxDepth = 5;
 			minSamplesPerLeaf = 5;
@@ -64,7 +66,7 @@ int main(int argc, char **argv)
 		}
 
 		// in this work it's 8
-		int numClasses = 8;
+		int numClasses = 2;
 
 		if (directTrain)
 		{
@@ -76,7 +78,7 @@ int main(int argc, char **argv)
 			Eigen::VectorXi trainlabels;
 
 			// reading dataset and labels from given file path
-			trainObj.readPoints(cloudPath.c_str(), cloud);
+			trainObj.readPoints(trainCloudPath.c_str(), cloud);
 			//trainObj.readLabels(truthPath.c_str(), truths);
 			trainObj.readPoints(trainSetPath.c_str(), trainset);
 			trainObj.readLabels(trainLabelPath.c_str(), trainlabels);
@@ -100,12 +102,12 @@ int main(int argc, char **argv)
 
 			start = std::chrono::system_clock::now();
 			//randObj.predict(valSetPath.c_str(), predictedLabels);
-			randObj.predict(cloudPath.c_str(), valSetPath.c_str(), predictedLabels);
+			randObj.predict(testCloudPath.c_str(), testSetPath.c_str(), predictedLabels);
 			end = std::chrono::system_clock::now();
 			elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
 			std::cout << "Predicting takes: " << elapsed << "s" << std::endl;
 
-			trainObj.writeToDisk(valLabelPath.c_str(), predictedLabels);
+			trainObj.writeToDisk(testLabelPath.c_str(), predictedLabels);
 		}
 		else
 		{
@@ -113,12 +115,12 @@ int main(int argc, char **argv)
 			Eigen::VectorXi predictedLabels;
 			auto start = std::chrono::system_clock::now();
 			//randObj.predict(valSetPath.c_str(), predictedLabels);
-			randObj.predict(cloudPath.c_str(), valSetPath.c_str(), predictedLabels);
+			randObj.predict(testCloudPath.c_str(), testSetPath.c_str(), predictedLabels);
 			auto end = std::chrono::system_clock::now();
 			double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
 			std::cout << "Predicting takes: " << elapsed << "s" << std::endl;
 			InOut testObj;
-			testObj.writeToDisk(valLabelPath.c_str(), predictedLabels);
+			testObj.writeToDisk(testLabelPath.c_str(), predictedLabels);
 		}
 	}
 	system("pause");
