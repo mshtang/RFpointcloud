@@ -12,8 +12,12 @@ class FeatureFactory
 public:
 
 	FeatureFactory(Eigen::MatrixXf& neighborhood, Features feat);
-	float project();
-	float castProjection(const Eigen::MatrixXf &voxel, int featType);
+	// if (one of the subvoxel) is empty or the projection cannot be
+	// cast (e.g. a subvoxel has less than 3 points but projection type
+	// is eigen value based.), false is returned, otherwise true and the
+	// result is stored in res.
+	bool project(float &res);
+	bool castProjection(const Eigen::MatrixXf &voxel, int featType, float& res);
 
 	// find the k-nn of each point in this local neighborhood (here k is half the 
 	// number of points in the neighborhood) so that voxels of different sizes
@@ -22,12 +26,12 @@ public:
 	Eigen::MatrixXf getLocalDists() { return _localDists; }
 
 	//TODO: modify according to the final number of projections
-	static const int numOfPossibleProjections = 16;
+	static const int numOfPossibleProjections = 27;
 	
-	void computeEigens(const Eigen::Matrix3f &covMat, float & majorVal, float & middleVal, float & minorVal, Eigen::Vector3f & majorAxis, Eigen::Vector3f & middleAxis, Eigen::Vector3f & minorAxis);
+	void computeEigens(const Eigen::Matrix3f &covMat, float & majorVal, float & middleVal, float & minorVal, 
+					   Eigen::Vector3f & majorAxis, Eigen::Vector3f & middleAxis, Eigen::Vector3f & minorAxis);
 
-	void computeOBB(Eigen::MatrixXf & neigh, Eigen::MatrixXf &neighR, Eigen::Vector3f & obbMinP, Eigen::Vector3f & obbMaxP, Eigen::Matrix3f & obbR, Eigen::Vector3f & obbPos);
-
+	void computeOBB(Eigen::MatrixXf & neigh, Eigen::MatrixXf &neighR, Eigen::Vector3f & obbMinP, Eigen::Vector3f & obbMaxP);
 	std::vector<std::vector<Eigen::VectorXf>> partitionSpace(Eigen::MatrixXf & neigh);
 
 

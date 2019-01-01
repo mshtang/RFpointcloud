@@ -109,7 +109,7 @@ void RandomForest::predict(const char * testCloudPath, const char * testDataPath
 	int numTests = testset.rows();
 	predictedLabels.resize(numTests);
 	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, _numClasses, _numFeatsPerNode, &testCloud);
-	std::cout << "Predcting begins ... " << std::endl;
+	std::cout << "Predicting begins ... " << std::endl;
 	for (int i = 0; i < numTests; ++i)
 	{
 		//Eigen::VectorXi datapoint = testSamples->_dataset->row(i);
@@ -131,7 +131,7 @@ void RandomForest::predict(const char* testDataPath, Eigen::VectorXi &predictedL
 	int numTests = testset.rows();
 	predictedLabels.resize(numTests);
 	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, _numClasses, _numFeatsPerNode, &testset);
-	std::cout << "Predcting begins ... " << std::endl;
+	std::cout << "Predicting begins ... " << std::endl;
 	for (int i = 0; i < numTests; ++i)
 	{
 		//Eigen::VectorXi datapoint = testSamples->_dataset->row(i);

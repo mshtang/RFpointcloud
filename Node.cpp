@@ -82,15 +82,25 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 		std::vector<float> leftProbs;
 		std::vector<float> rightProbs;
 		std::vector<float> castResults;
+		std::vector<float> forMedian;
 		for (int j = 0; j < numSamples; ++j)
 		{
 			Eigen::MatrixXf neigh = _samples->buildNeighborhood(sampleId[j]);
 			FeatureFactory nodeFeat(neigh, feat);
-			float castResult = nodeFeat.castProjection();
+			float castResult = 0.0f;
+			bool success = true;
+			success = nodeFeat.project(castResult);
 			castResults.push_back(castResult);
+			if (success)
+				forMedian.push_back(castResult);
 		}
-		// find the median of all the projections
-		feat._thresh = findMedian(castResults);
+		// find the median of all valid projections
+		if (!forMedian.empty())
+			feat._thresh = findMedian(forMedian);
+		// all projections are not valid, continue
+		else
+			continue;
+
 		for (int j = 0; j < numSamples; ++j)
 		{
 			if (castResults[j] < feat._thresh)
