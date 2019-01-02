@@ -59,16 +59,19 @@ public:
 	 * with number of classes, number of features means how many features are considered at each
 	 * node.
 	 *****************************************************************************************/
-	Sample(Eigen::MatrixXf *dataset, Eigen::VectorXi *labels, 
-		   Eigen::MatrixXi *indexMat, Eigen::MatrixXf *distMat, 
-		   int numClass, int numFeature, 
-		   Eigen::MatrixXf *cloud);
+	
 
 	/*Sample(Eigen::MatrixXf *dataset, Eigen::VectorXi *labels,
 		   Eigen::MatrixXi *indexMat, Eigen::MatrixXf *distMat,
 		   int numClass, int numFeature);*/
 	
-	/* to new a Sample object using a pointer to Sample, so that the dataset/labels etc. will 
+	Sample(Eigen::MatrixXf * dataset, Eigen::VectorXi * labels, Eigen::MatrixXi * indexMat, 
+		   Eigen::MatrixXf * distMat, int numClass, int numFeature, Eigen::MatrixXf * cloud, 
+		   Eigen::MatrixXf * ptEigenValuesMat, Eigen::MatrixXf * ptEigenVectorsMat, 
+		   std::vector<Eigen::MatrixXf>* partsEigenValuesMat, std::vector<Eigen::MatrixXf>* partsEigenVectorsMat, 
+		   std::vector<std::vector<std::vector<int>>>* vecVecVecIndices);
+
+	/* to new a Sample object using a pointer to Sample, so that the dataset/labels etc. will
 	 * not be copied but referenced*/
 	Sample(Sample* samples);
 
@@ -116,12 +119,16 @@ public:
 	Eigen::MatrixXf *_dataset;
 	// pointer to the original cloud
 	Eigen::MatrixXf *_cloud;
-private:
-
+//private:
 	// _indexMat stores the indices of nearest neighbors for each datapoint
 	Eigen::MatrixXi *_indexMat;
 	// _distMat stores the dists of nearest neighbors to each datapoint
 	Eigen::MatrixXf *_distMat;
+	Eigen::MatrixXf *_ptEigenValuesMat;
+	Eigen::MatrixXf *_ptEigenVectorsMat;
+	std::vector<Eigen::MatrixXf> *_partsEigenValuesMat;
+	std::vector<Eigen::MatrixXf> *_partsEigenVectorsMat;
+	std::vector<std::vector<std::vector<int>>> *_vecVecVecIndices;
 	// _selectedSamplesId stores the indices of selected datapoints
 	Eigen::VectorXi _selectedSamplesId;
 	std::vector<Features> _features;

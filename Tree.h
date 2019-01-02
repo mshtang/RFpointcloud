@@ -21,11 +21,19 @@ public:
 	
 	void train(Sample *sample);
 	
-	std::vector<float> predict(Eigen::MatrixXf &testNeigh);
+	std::vector<float> predict(std::vector<Eigen::MatrixXf> & voxels, Eigen::VectorXf & ptEigenValues, 
+							   Eigen::VectorXf & ptEigenVectors, Eigen::MatrixXf & voxelEigenValues, 
+							   Eigen::MatrixXf & voxelEigenVectors);
+
+	int searchNode(std::vector<Eigen::MatrixXf> & testNeigh, Eigen::VectorXf & ptEigenValues, 
+				   Eigen::VectorXf & ptEigenVectors, Eigen::MatrixXf & voxelEigenValues, 
+				   Eigen::MatrixXf & voxelEigenVectors, int nodeId);
+	
 	
 	inline std::vector<Node*> getTreeNodes() { return _treeNodes; }
 
 	void createLeaf(int nodeId, int classLabel, float prob, std::vector<float> probs);
+
 
 	void createNode(int nodeId, Features bestFeat);
 
@@ -44,7 +52,7 @@ public:
 	int getNumSamplesInLargestLeaf() { return _numSamplesInLargestLeaf; }
 	std::vector<float> getLargestLeafDistr() { return _largestLeafDistr; }
 	std::vector<float> getBestFeatTypeDistr() { return _bestFeatTypeDistr; }
-	int searchNode(Eigen::MatrixXf & testNeigh, int nodeId);
+	
 
 private:
 	int _maxDepth;

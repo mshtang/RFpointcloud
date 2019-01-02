@@ -5,38 +5,45 @@
 #include "utils.h"
 #include "c:/Eigen/Eigen/src/Eigenvalues/EigenSolver.h"
 
-FeatureFactory::FeatureFactory(Eigen::MatrixXf& neighborhood, Features feat) :
-	_neighborhood(neighborhood),
-	_feat(feat)
+FeatureFactory::FeatureFactory(std::vector<Eigen::MatrixXf> &voxels, Features feat,
+							   Eigen::VectorXf &ptEValues, Eigen::VectorXf &ptEVectors,
+							   Eigen::MatrixXf &voxelEValues, Eigen::MatrixXf &voxelEVectors) :
+	_voxels(voxels),
+	_feat(feat),
+	_ptEValues(ptEValues),
+	_ptEVectors(ptEVectors),
+	_voxelEValues(voxelEValues),
+	_voxelEVectors(voxelEVectors)
+
 {}
 
 
-void FeatureFactory::buildVoxels(std::vector<std::vector<Eigen::VectorXf>> &partitions)
-{
-	for (int i = 0; i < _feat._numVoxels; ++i)
-	{
-		int idx = _feat._pointId[i];
-		if (partitions[idx].size() == 0)
-		{
-			Eigen::MatrixXf tmp(1,1);
-			tmp << 0;
-			_voxels.push_back(tmp);
-		}
-		else if (partitions[idx].size() == 1)
-		{
-			_voxels.push_back(partitions[idx][0].transpose());
-		}
-		else
-		{
-			std::vector<Eigen::VectorXf> points = partitions[idx];
-			int d = points[0].size();
-			Eigen::MatrixXf voxel(points.size(), d);
-			for (int j = 0; j < points.size(); ++j)
-				voxel.row(j) = points[j].transpose();
-			_voxels.push_back(voxel);
-		}
-	}
-}
+//void FeatureFactory::buildVoxels(std::vector<std::vector<Eigen::VectorXf>> &partitions)
+//{
+//	for (int i = 0; i < _feat._numVoxels; ++i)
+//	{
+//		int idx = _feat._pointId[i];
+//		if (partitions[idx].size() == 0)
+//		{
+//			Eigen::MatrixXf tmp(1,1);
+//			tmp << 0;
+//			_voxels.push_back(tmp);
+//		}
+//		else if (partitions[idx].size() == 1)
+//		{
+//			_voxels.push_back(partitions[idx][0].transpose());
+//		}
+//		else
+//		{
+//			std::vector<Eigen::VectorXf> points = partitions[idx];
+//			int d = points[0].size();
+//			Eigen::MatrixXf voxel(points.size(), d);
+//			for (int j = 0; j < points.size(); ++j)
+//				voxel.row(j) = points[j].transpose();
+//			_voxels.push_back(voxel);
+//		}
+//	}
+//}
 
 std::vector<Eigen::VectorXf> FeatureFactory::averageVoxels()
 {
@@ -205,20 +212,28 @@ std::vector<Eigen::VectorXf> FeatureFactory::averageVoxels()
 
 bool FeatureFactory::project(float &res)
 {
-	std::vector<std::vector<Eigen::VectorXf>> partitions;
-	partitions = partitionSpace(_neighborhood);
-	buildVoxels(partitions);
 	res = 0.0f;
-	// one-voxel comparison
-	if (_voxels.size() == 1)
+	// select voxels
+	std::vector<Eigen::MatrixXf> selectedVoxels;
+	std::vector<Eigen::VectorXf> selectedEigenValues;
+	std::vector<Eigen::VectorXf> selectedEigenVectors;
+	for (int i = 0; i < _feat._numVoxels; ++i)
 	{
-		if (_voxels[0].size() == 1) // empty voxel
+		int selectedId = _feat._pointId[i];
+		selectedVoxels.push_back(_voxels[selectedId]);
+		selectedEigenValues.push_back(_voxelEValues.row(selectedId));
+		selectedEigenVectors.push_back(_voxelEVectors.row(selectedId));
+	}
+	// one-voxel comparison
+	if (selectedVoxels.size()==1)
+	{
+		if (selectedVoxels[0].size()==1) // empty voxel
 		{
 			res = -1000.0;
 			return false;
 		}
 		// voxel not empty but no enough points for eigen based features
-		else if (_voxels[0].rows() < 3 and _feat._featType >= 9)
+		else if (selectedVoxels[0].rows() < 3 and _feat._featType >= 9)
 		{
 			res = -1000.0;
 			return false;
@@ -226,18 +241,19 @@ bool FeatureFactory::project(float &res)
 		else
 		{
 			float res1 = 0.0f, res2 = 0.0f;
-			castProjection(_voxels[0], _feat._featType, res1);
-			castProjection(_neighborhood, _feat._featType, res2);
+			castProjection(selectedVoxels[0], _feat._featType, selectedEigenValues[0], selectedEigenVectors[0], res1);
+			Eigen::MatrixXf neighborhood = recoverNeighborhood(_voxels);
+			castProjection(neighborhood, _feat._featType, _ptEValues, _ptEVectors, res2);
 			res = res1 - res2;
 
 		}
 	}
 	// two-voxel comparion
-	else if (_voxels.size() == 2)
+	else if (selectedVoxels.size() == 2)
 	{
-		if (_voxels[0].size() != 1 and _voxels[1].size() != 1) // both are not empty
+		if (selectedVoxels[0].size() != 1 and selectedVoxels[1].size() != 1) // both are not empty
 		{
-			if ((_voxels[0].rows() < 3 or _voxels[1].rows() < 3) and _feat._featType >= 9)
+			if ((selectedVoxels[0].rows() < 3 or selectedVoxels[1].rows() < 3) and _feat._featType >= 9)
 			{
 				res = -1000.0;
 				return false;
@@ -245,8 +261,8 @@ bool FeatureFactory::project(float &res)
 			else
 			{
 				float res1 = 0.0f, res2 = 0.0f;
-				castProjection(_voxels[0], _feat._featType, res1);
-				castProjection(_voxels[1], _feat._featType, res2);
+				castProjection(selectedVoxels[0], _feat._featType, selectedEigenValues[0], selectedEigenVectors[0], res1);
+				castProjection(selectedVoxels[1], _feat._featType, selectedEigenValues[1], selectedEigenVectors[1], res2);
 				res = res1 - res2;
 			}
 		}
@@ -259,9 +275,9 @@ bool FeatureFactory::project(float &res)
 	// four-voxel comparion
 	else
 	{
-		if (_voxels[0].size() != 1 and _voxels[1].size() != 1 and _voxels[2].size()!=1 and _voxels[3].size()!=1) // all are not empty
+		if (selectedVoxels[0].size() != 1 and selectedVoxels[1].size() != 1 and selectedVoxels[2].size()!=1 and selectedVoxels[3].size()!=1) // all are not empty
 		{
-			if ((_voxels[0].rows() < 3 or _voxels[1].rows() < 3 or _voxels[2].rows()<3 or _voxels[3].rows()<3) and _feat._featType >= 9)
+			if ((selectedVoxels[0].rows() < 3 or selectedVoxels[1].rows() < 3 or selectedVoxels[2].rows()<3 or selectedVoxels[3].rows()<3) and _feat._featType >= 9)
 			{
 				res = -1000.0;
 				return false;
@@ -269,10 +285,10 @@ bool FeatureFactory::project(float &res)
 			else
 			{
 				float res1 = 0.0f, res2 = 0.0f, res3 = 0.0f, res4 = 0.0f;
-				castProjection(_voxels[0], _feat._featType, res1);
-				castProjection(_voxels[1], _feat._featType, res2);
-				castProjection(_voxels[2], _feat._featType, res3);
-				castProjection(_voxels[3], _feat._featType, res4);
+				castProjection(selectedVoxels[0], _feat._featType, selectedEigenValues[0], selectedEigenVectors[0], res1);
+				castProjection(selectedVoxels[1], _feat._featType, selectedEigenValues[1], selectedEigenVectors[1], res2);
+				castProjection(selectedVoxels[2], _feat._featType, selectedEigenValues[2], selectedEigenVectors[2], res3);
+				castProjection(selectedVoxels[3], _feat._featType, selectedEigenValues[3], selectedEigenVectors[3], res4);
 				res = (res1 - res2) - (res3 - res4);
 			}
 		}
@@ -287,7 +303,8 @@ bool FeatureFactory::project(float &res)
 
 // a voxel may contain only one or two points, in which case, projections of featType greater than
 // 8 (eigen value based projection) can not be performed, a flase flag will be returned.
-bool FeatureFactory::castProjection(const Eigen::MatrixXf &voxel, int featType, float &testResult)
+bool FeatureFactory::castProjection(const Eigen::MatrixXf &voxel, int featType, Eigen::VectorXf &selectedEigenValues,  
+									Eigen::VectorXf &selectedEigenVectors, float &testResult)
 {
 	testResult = 0.0f;
 
@@ -339,18 +356,19 @@ bool FeatureFactory::castProjection(const Eigen::MatrixXf &voxel, int featType, 
 	// (eigenvalue-based 3d geometric features)
 	else // if (featType >= 9 and featType <= 26)
 	{
+		
 		// eigenvalues
-		float eigv0 = 0;
-		float eigv1 = 0;
-		float eigv2 = 0;
+		float eigv0 = selectedEigenValues.x();
+		float eigv1 = selectedEigenValues.y();
+		float eigv2 = selectedEigenValues.z();
 		// eigenvectors;
 		Eigen::Vector3f vec0;
+		vec0 << selectedEigenVectors(0), selectedEigenVectors(1), selectedEigenVectors(2);
 		Eigen::Vector3f vec1;
+		vec1 << selectedEigenVectors(3), selectedEigenVectors(4), selectedEigenVectors(5);
 		Eigen::Vector3f vec2;
+		vec2 << selectedEigenVectors(6), selectedEigenVectors(7), selectedEigenVectors(8);
 
-		Eigen::MatrixXf covMat = computeCovarianceMatrix(voxel);
-		computeEigens(covMat, eigv0, eigv1, eigv2, vec0, vec1, vec2);
-		
 		// compare linearity
 		if (featType == 9)
 			testResult = (eigv0 - eigv1) / eigv0;
@@ -759,4 +777,24 @@ std::vector<std::vector<Eigen::VectorXf>> FeatureFactory::partitionSpace(Eigen::
 		voxels[idx].push_back(neigh.row(i));
 	}
 	return voxels;
+}
+
+Eigen::MatrixXf FeatureFactory::recoverNeighborhood(std::vector<Eigen::MatrixXf> voxels)
+{
+	std::vector<Eigen::VectorXf> points;
+	for (int i = 0; i < voxels.size(); ++i)
+	{
+		if (voxels[i].size() == 1) // empty voxel
+			continue;
+		for (int j = 0; j < voxels[i].rows(); ++j)
+		{
+			points.push_back(voxels[i].row(j));
+		}
+	}
+	Eigen::MatrixXf res(points.size(), points[0].size());
+	for (int i = 0; i < points.size(); ++i)
+	{
+		res.row(i) = points[i].transpose();
+	}
+	return res;
 }

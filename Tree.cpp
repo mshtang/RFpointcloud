@@ -60,16 +60,20 @@ void Tree::createLeaf(int nodeId, int classLabel, float prob, std::vector<float>
 	_treeNodes[nodeId]->_probs = probs;
 }
 
-std::vector<float> Tree::predict(Eigen::MatrixXf &testNeigh)
+std::vector<float> Tree::predict(std::vector<Eigen::MatrixXf> &voxels, Eigen::VectorXf &ptEigenValues, 
+								 Eigen::VectorXf &ptEigenVectors, Eigen::MatrixXf &voxelEigenValues,
+								 Eigen::MatrixXf &voxelEigenVectors)
 {
 	// starting from the 0th node
 	// do a recursive breadth first search in searchNode()
 	int nodeId = 0;
-	nodeId = searchNode(testNeigh, 0);
+	nodeId = searchNode(voxels, ptEigenValues, ptEigenVectors, voxelEigenValues, voxelEigenVectors, 0);
 	return _treeNodes[nodeId]->_probs;
 }
 
-int Tree::searchNode(Eigen::MatrixXf &testNeigh, int nodeId)
+int Tree::searchNode(std::vector<Eigen::MatrixXf> &testNeigh, Eigen::VectorXf &ptEigenValues,
+					 Eigen::VectorXf &ptEigenVectors, Eigen::MatrixXf &voxelEigenValues,
+					 Eigen::MatrixXf &voxelEigenVectors, int nodeId)
 {
 	if (_treeNodes[nodeId]->isLeaf())
 	{
@@ -78,16 +82,19 @@ int Tree::searchNode(Eigen::MatrixXf &testNeigh, int nodeId)
 	else
 	{
 		Features testFeat = _treeNodes[nodeId]->getBestFeature();
-		FeatureFactory testNodeFeat(testNeigh,testFeat);
+
+		FeatureFactory testNodeFeat(testNeigh,testFeat, ptEigenValues, ptEigenVectors, voxelEigenValues, voxelEigenVectors);
 		float testResult = 0.0f;
 		testNodeFeat.project(testResult);
 		if (testResult < testFeat._thresh)
 		{
-			return searchNode(testNeigh, nodeId * 2 + 1);
+			return searchNode(testNeigh, ptEigenValues, ptEigenVectors, voxelEigenValues,
+							  voxelEigenVectors, nodeId * 2 + 1);
 		}
 		else
 		{
-			return searchNode(testNeigh, nodeId * 2 + 2);
+			return searchNode(testNeigh, ptEigenValues, ptEigenVectors, voxelEigenValues,
+							  voxelEigenVectors, nodeId * 2 + 2);
 		}
 	}
 }

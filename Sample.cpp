@@ -7,14 +7,22 @@
 Sample::Sample(Eigen::MatrixXf *dataset, Eigen::VectorXi *labels, 
 			   Eigen::MatrixXi *indexMat, Eigen::MatrixXf *distMat, 
 			   int numClass, int numFeature,
-			   Eigen::MatrixXf *cloud):
+			   Eigen::MatrixXf *cloud,
+			   Eigen::MatrixXf *ptEigenValuesMat, Eigen::MatrixXf *ptEigenVectorsMat,
+			   std::vector<Eigen::MatrixXf> *partsEigenValuesMat, std::vector<Eigen::MatrixXf> *partsEigenVectorsMat,
+			   std::vector<std::vector<std::vector<int>>> *vecVecVecIndices):
 	_dataset(dataset),
 	_labels(labels),
 	_indexMat(indexMat),
 	_distMat(distMat),
 	_numClass(numClass),
 	_numFeature(numFeature),
-	_cloud(cloud)
+	_cloud(cloud),
+	_ptEigenValuesMat(ptEigenValuesMat),
+	_ptEigenVectorsMat(ptEigenVectorsMat),
+	_partsEigenValuesMat(partsEigenValuesMat),
+	_partsEigenVectorsMat(partsEigenVectorsMat),
+	_vecVecVecIndices(vecVecVecIndices)
 { 
 }
 
@@ -35,7 +43,12 @@ Sample::Sample(Sample* sample):
 	_numFeature(sample->_numFeature),
 	_numSelectedSamples(sample->getNumSelectedSamples()),
 	_selectedSamplesId(sample->getSelectedSamplesId()),
-	_cloud(sample->_cloud)
+	_cloud(sample->_cloud),
+	_ptEigenValuesMat(sample->_ptEigenValuesMat),
+	_ptEigenVectorsMat(sample->_ptEigenVectorsMat),
+	_partsEigenValuesMat(sample->_partsEigenValuesMat),
+	_partsEigenVectorsMat(sample->_partsEigenVectorsMat),
+	_vecVecVecIndices(sample->_vecVecVecIndices)
 { 
 }
 
@@ -48,7 +61,12 @@ Sample::Sample(const Sample* sample, Eigen::VectorXi &samplesId) :
 	_numFeature(sample->_numFeature),
 	_selectedSamplesId(samplesId),
 	_numSelectedSamples(samplesId.rows()),
-	_cloud(sample->_cloud)
+	_cloud(sample->_cloud),
+	_ptEigenValuesMat(sample->_ptEigenValuesMat),
+	_ptEigenVectorsMat(sample->_ptEigenVectorsMat),
+	_partsEigenValuesMat(sample->_partsEigenValuesMat),
+	_partsEigenVectorsMat(sample->_partsEigenVectorsMat),
+	_vecVecVecIndices(sample->_vecVecVecIndices)
 {
 }
 

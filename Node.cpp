@@ -47,7 +47,7 @@ void Node::computeNodeGini()
 void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 {
 	Eigen::MatrixXf data = *(_samples->_dataset);
-	Eigen::VectorXi labels =*( _samples->_labels);
+	Eigen::VectorXi labels = *(_samples->_labels);
 	//Eigen::MatrixXf cloud = *(_samples->_cloud);
 	//Eigen::VectorXi truths = *(_samples->_truths);
 	// randomly samples some points from the cloud
@@ -85,8 +85,41 @@ void Node::computeInfoGain(std::vector<Node*> &nodes, int nodeId)
 		std::vector<float> forMedian;
 		for (int j = 0; j < numSamples; ++j)
 		{
-			Eigen::MatrixXf neigh = _samples->buildNeighborhood(sampleId[j]);
-			FeatureFactory nodeFeat(neigh, feat);
+			// neighboring point IDs of sampleId[j], in 27 subvoxels 
+			std::vector<std::vector<int>> cand = (*(_samples->_vecVecVecIndices))[sampleId[j]];
+			// recover subvoxels of neighborhoods
+			std::vector<Eigen::MatrixXf> voxels;
+			for (int k = 0; k < cand.size(); ++k)
+			{
+				std::vector<int> points = cand[k];
+				int nn = points.size();
+				if (nn == 1 and points[0] == -1) // empty voxel
+				{
+					Eigen::MatrixXf tmp;
+					tmp.resize(1, 1);
+					tmp << -1;
+					voxels.push_back(tmp);
+				}
+				else // non=empty voxel
+				{
+					int dd = (*(_samples->_cloud)).cols();
+					Eigen::MatrixXf tmp(nn, dd);
+					for (int kk = 0; kk < nn; ++kk)
+					{
+						tmp.row(kk) = (*(_samples->_cloud)).row(points[kk]);
+					}
+					voxels.push_back(tmp);
+				}
+			}
+			// recover point eigenvalues and eigenvectors
+			Eigen::VectorXf ptEigenValues = (*(_samples->_ptEigenValuesMat)).row(sampleId[j]);
+			Eigen::VectorXf ptEigenVectors = (*(_samples->_ptEigenVectorsMat)).row(sampleId[j]);
+			// recover voxel eigenvalues and eigenvectors
+			Eigen::MatrixXf voxelEigenValues = (*(_samples->_partsEigenValuesMat))[sampleId[j]];
+			Eigen::MatrixXf voxelEigenVectors = (*(_samples->_partsEigenVectorsMat))[sampleId[j]];
+
+			FeatureFactory nodeFeat(voxels, feat, ptEigenValues, ptEigenVectors, voxelEigenValues, voxelEigenVectors);
+			
 			float castResult = 0.0f;
 			bool success = true;
 			success = nodeFeat.project(castResult);

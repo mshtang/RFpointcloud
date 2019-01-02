@@ -32,7 +32,9 @@ RandomForest::~RandomForest()
 void RandomForest::train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, 
 						 Eigen::MatrixXi *indices, Eigen::MatrixXf *dists, 
 						 int numClasses, int numFeatsPerNode,
-						 Eigen::MatrixXf *cloud)
+						 Eigen::MatrixXf *cloud, Eigen::MatrixXf *ptEigenValues,
+						 Eigen::MatrixXf *ptEigenVectors, std::vector<Eigen::MatrixXf> *voxelEigenValues,
+						 std::vector<Eigen::MatrixXf> *voxelEigenVectors, std::vector<std::vector<std::vector<int>>> *voxelIndices)
 {
 	if (_numTrees < 1)
 	{
@@ -68,7 +70,8 @@ void RandomForest::train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels,
 	}
 
 	// this object holds the whole training dataset
-	_trainSample = new Sample(trainset, labels, indices, dists, _numClasses, _numFeatsPerNode, cloud);
+	_trainSample = new Sample(trainset, labels, indices, dists, _numClasses, _numFeatsPerNode, cloud,
+							  ptEigenValues, ptEigenVectors, voxelEigenValues, voxelEigenVectors, voxelIndices);
 
 	// selected samples
 	Eigen::VectorXi selectedSamplesId(_numSelectedSamples);
@@ -101,20 +104,63 @@ void RandomForest::predict(const char * testCloudPath, const char * testDataPath
 	Eigen::MatrixXf testset;
 	Eigen::MatrixXi testIndices;
 	Eigen::MatrixXf testDists;
+	Eigen::MatrixXf testPtValues;
+	Eigen::MatrixXf testPtVectors;
+	std::vector<Eigen::MatrixXf> testVoxelValues;
+	std::vector<Eigen::MatrixXf> testVoxelVectors;
+	std::vector<std::vector<std::vector<int>>> testVoxelIndices;
 	InOut testObj;
 	testObj.readPoints(testCloudPath, testCloud);
 	testObj.readPoints(testDataPath, testset);
-	testObj.searchNN(testCloud, testset, testIndices, testDists);
+	//testObj.searchNN(testCloud, testset, testIndices, testDists);
+	testObj.partitionNeighborhood(testCloud, testset, testIndices, testDists, 
+								  testPtValues, testPtVectors, testVoxelValues, 
+								  testVoxelVectors, testVoxelIndices);
 
 	int numTests = testset.rows();
 	predictedLabels.resize(numTests);
-	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, _numClasses, _numFeatsPerNode, &testCloud);
+	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, 
+									 _numClasses, _numFeatsPerNode, &testCloud,
+									 &testPtValues, &testPtVectors, &testVoxelValues, 
+									 &testVoxelVectors, &testVoxelIndices);
 	std::cout << "Predicting begins ... " << std::endl;
 	for (int i = 0; i < numTests; ++i)
 	{
-		//Eigen::VectorXi datapoint = testSamples->_dataset->row(i);
-		Eigen::MatrixXf testDataNeigh = testSamples->buildNeighborhood(i);
-		predictedLabels[i] = predict(testDataNeigh);
+		// neighboring point IDs of ith point, in 27 subvoxels 
+		std::vector<std::vector<int>> cand = (*(testSamples->_vecVecVecIndices))[i];
+		// recover subvoxels of neighborhoods
+		std::vector<Eigen::MatrixXf> voxels;
+		for (int k = 0; k < cand.size(); ++k)
+		{
+			std::vector<int> points = cand[k];
+			int nn = points.size();
+			if (nn == 1 and points[0] == -1) // empty voxel
+			{
+				Eigen::MatrixXf tmp;
+				tmp.resize(1, 1);
+				tmp << -1;
+				voxels.push_back(tmp);
+			}
+			else // non=empty voxel
+			{
+				int dd = (*(testSamples->_cloud)).cols();
+				Eigen::MatrixXf tmp(nn, dd);
+				for (int kk = 0; kk < nn; ++kk)
+				{
+					tmp.row(kk) = (*(testSamples->_cloud)).row(points[kk]);
+				}
+				voxels.push_back(tmp);
+			}
+		}
+		// recover point eigenvalues and eigenvectors
+		Eigen::VectorXf ptEigenValues = (*(testSamples->_ptEigenValuesMat)).row(i);
+		Eigen::VectorXf ptEigenVectors = (*(testSamples->_ptEigenVectorsMat)).row(i);
+		// recover voxel eigenvalues and eigenvectors
+		Eigen::MatrixXf voxelEigenValues = (*(testSamples->_partsEigenValuesMat))[i];
+		Eigen::MatrixXf voxelEigenVectors = (*(testSamples->_partsEigenVectorsMat))[i];
+
+		//FeatureFactory nodeFeat(voxels, feat, ptEigenValues, ptEigenVectors, voxelEigenValues, voxelEigenVectors);
+		predictedLabels[i] = predict(voxels, ptEigenValues, ptEigenVectors, voxelEigenValues, voxelEigenVectors);
 	}
 }
 
@@ -124,23 +170,67 @@ void RandomForest::predict(const char* testDataPath, Eigen::VectorXi &predictedL
 	Eigen::MatrixXf testset;
 	Eigen::MatrixXi testIndices;
 	Eigen::MatrixXf testDists;
+	Eigen::MatrixXf testPtValues;
+	Eigen::MatrixXf testPtVectors;
+	std::vector<Eigen::MatrixXf> testVoxelValues;
+	std::vector<Eigen::MatrixXf> testVoxelVectors;
+	std::vector<std::vector<std::vector<int>>> testVoxelIndices;
 	InOut testObj;
 	testObj.readPoints(testDataPath, testset);
-	testObj.searchNN(testset, testIndices, testDists);
-
+	//testObj.searchNN(testset, testIndices, testDists);
+	testObj.partitionNeighborhood(testset, testset, testIndices, testDists, 
+								  testPtValues, testPtVectors, testVoxelValues, 
+								  testVoxelVectors, testVoxelIndices);
+	
 	int numTests = testset.rows();
 	predictedLabels.resize(numTests);
-	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, _numClasses, _numFeatsPerNode, &testset);
+	Sample* testSamples = new Sample(&testset, &predictedLabels, &testIndices, &testDists, 
+									 _numClasses, _numFeatsPerNode, &testset,
+									 &testPtValues, &testPtVectors, &testVoxelValues, 
+									 &testVoxelVectors, &testVoxelIndices);
+	
 	std::cout << "Predicting begins ... " << std::endl;
 	for (int i = 0; i < numTests; ++i)
 	{
-		//Eigen::VectorXi datapoint = testSamples->_dataset->row(i);
-		Eigen::MatrixXf testDataNeigh = testSamples->buildNeighborhood(i);
-		predictedLabels[i] = predict(testDataNeigh);
+		// neighboring point IDs of ith point, in 27 subvoxels 
+		std::vector<std::vector<int>> cand = (*(testSamples->_vecVecVecIndices))[i];
+		// recover subvoxels of neighborhoods
+		std::vector<Eigen::MatrixXf> voxels;
+		for (int k = 0; k < cand.size(); ++k)
+		{
+			std::vector<int> points = cand[k];
+			int nn = points.size();
+			if (nn == 1 and points[0] == -1) // empty voxel
+			{
+				Eigen::MatrixXf tmp;
+				tmp.resize(1, 1);
+				tmp << -1;
+				voxels.push_back(tmp);
+			}
+			else // non=empty voxel
+			{
+				int dd = (*(testSamples->_cloud)).cols();
+				Eigen::MatrixXf tmp(nn, dd);
+				for (int kk = 0; kk < nn; ++kk)
+				{
+					tmp.row(kk) = (*(testSamples->_cloud)).row(points[kk]);
+				}
+				voxels.push_back(tmp);
+			}
+		}
+		// recover point eigenvalues and eigenvectors
+		Eigen::VectorXf ptEigenValues = (*(testSamples->_ptEigenValuesMat)).row(i);
+		Eigen::VectorXf ptEigenVectors = (*(testSamples->_ptEigenVectorsMat)).row(i);
+		// recover voxel eigenvalues and eigenvectors
+		Eigen::MatrixXf voxelEigenValues = (*(testSamples->_partsEigenValuesMat))[i];
+		Eigen::MatrixXf voxelEigenVectors = (*(testSamples->_partsEigenVectorsMat))[i];
+		predictedLabels[i] = predict(voxels, ptEigenValues, ptEigenVectors, voxelEigenValues, voxelEigenVectors);
 	}
 }
 
-int RandomForest::predict(Eigen::MatrixXf &testNeigh)
+int RandomForest::predict(std::vector<Eigen::MatrixXf> &voxels, Eigen::VectorXf &ptEigenValues, 
+						  Eigen::VectorXf &ptEigenVectors, Eigen::MatrixXf &voxelEigenValues, 
+						  Eigen::MatrixXf &voxelEigenVectors)
 {
 	Eigen::VectorXf predictedProbs(_numClasses);
 	for (int i = 0; i < _numClasses; ++i)
@@ -151,7 +241,8 @@ int RandomForest::predict(Eigen::MatrixXf &testNeigh)
 	// accumulate the class distribution of every tree
 	for (int i = 0; i < _numTrees; ++i)
 	{
-		predictedProbsVec = _forest[i]->predict(testNeigh);
+		predictedProbsVec = _forest[i]->predict(voxels, ptEigenValues, ptEigenVectors, voxelEigenValues,
+												voxelEigenVectors);
 		predictedProbs += toEigenVec(predictedProbsVec);
 	}
 	// average the class distribution

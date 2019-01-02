@@ -20,6 +20,7 @@ public:
 	RandomForest(const char* modelPath);
 	~RandomForest();
 
+
 	/***************************************************************
 	trainset:: the training set with each row repsresenting a datapoint (dims: N*7)
 	labels: the corresponding labels for each datapoint (dims: N*1)
@@ -31,10 +32,12 @@ public:
 	at each node is huge, so only a small fraction of that is used to limit
 	the computational effort
 	**************************************************************/
-	void train(Eigen::MatrixXf *trainset, Eigen::VectorXi *labels, 
-			   Eigen::MatrixXi *indices, Eigen::MatrixXf *dists, 
-			   int numClasses, int numFeatsPerNode,
-			   Eigen::MatrixXf *cloud);
+	void train(Eigen::MatrixXf * trainset, Eigen::VectorXi * labels, Eigen::MatrixXi * indices, Eigen::MatrixXf * dists, 
+			   int numClasses, int numFeatsPerNode, Eigen::MatrixXf * cloud, 
+			   Eigen::MatrixXf * ptEigenValues, Eigen::MatrixXf * ptEigenVectors, 
+			   std::vector<Eigen::MatrixXf>* voxelEigenValues, std::vector<Eigen::MatrixXf>* voxelEigenVectors, 
+			   std::vector<std::vector<std::vector<int>>>* voxelIndices);
+	
 	
 	/***************************************************************************
 	 * pass in the file path to the test dataset. within this method, an InOut
@@ -43,7 +46,10 @@ public:
 	 ***************************************************************************/
 	void predict(const char* testCloudPath, const char* testDataPath, Eigen::VectorXi &predictedLabels);
 	void predict(const char* testDataPath, Eigen::VectorXi &predictedLabels);
-	int predict(Eigen::MatrixXf &testNeigh);
+
+	int predict(std::vector<Eigen::MatrixXf> &voxels, Eigen::VectorXf & ptEigenValues, Eigen::VectorXf & ptEigenVectors,
+				Eigen::MatrixXf & voxelEigenValues, Eigen::MatrixXf & voxelEigenVectors);
+	
 
 	void saveModel(const char* path, const char* statFilePath=nullptr);
 	void readModel(const char* path);
