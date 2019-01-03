@@ -25,25 +25,14 @@ public:
 	//TODO: modify according to the final number of projections
 	static const int numOfPossibleProjections = 27;
 	
-	void computeEigens(const Eigen::Matrix3f &covMat, float & majorVal, float & middleVal, float & minorVal, 
-					   Eigen::Vector3f & majorAxis, Eigen::Vector3f & middleAxis, Eigen::Vector3f & minorAxis);
-
-	void computeOBB(Eigen::MatrixXf & neigh, Eigen::MatrixXf &neighR, Eigen::Vector3f & obbMinP, Eigen::Vector3f & obbMaxP);
-	std::vector<std::vector<Eigen::VectorXf>> partitionSpace(Eigen::MatrixXf & neigh);
-
 	Eigen::MatrixXf recoverNeighborhood(std::vector<Eigen::MatrixXf> voxels);
 
 
 
 	//private:
-	
-	std::vector<Eigen::VectorXf> averageVoxels();
 	bool castProjection(const Eigen::MatrixXf & voxel, int featType, Eigen::VectorXf & selectedEigenValues, Eigen::VectorXf & selectedEigenVectors, float & testResult);
 	float selectChannel(Eigen::VectorXf avg_voxel, int channelNo, bool convertToHSV=false);
 
-	Eigen::Matrix3f computeCovarianceMatrix(Eigen::MatrixXf neigh);
-
-	
 	std::vector<Eigen::MatrixXf> _voxels;
 	Features _feat;
 	Eigen::VectorXf _ptEValues;

@@ -26,9 +26,9 @@ int main(int argc, char **argv)
 	else
 	{
 		// change here to enter debug mode
-		bool debug = true;
+		bool debug = false;
 		// to control whether training from scratch or use a pretrained model
-		bool directTrain = false;
+		bool directTrain = true;
 
 		// give respective dataset/label path
 		std::string trainSetPath = "./TestEnv/synthetic_trainset2_downsample_1000.txt";
@@ -39,9 +39,9 @@ int main(int argc, char **argv)
 		std::string testCloudPath = "./TestEnv/synthetic_testset2_dropped.txt";
 		//std::string truthPath = "./datasets/bildstein_station1_xyz_intensity_rgb_dropped.labels";
 		// if training the real dataset, give a path to save the model
-		std::string modelPath = "./models/exp7.model";
+		std::string modelPath = "./models/exp8.model";
 		// statistics file of the model
-		std::string statsPath = "./models/exp7stats.txt";
+		std::string statsPath = "./models/exp8stats.txt";
 
 		// parameters to modify
 		int numTrees = 20;
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 		int minSamplesPerLeaf = 5;
 		int featsPerNode = 30;
 		// in this work it's 8
-		int numClasses = 8;
+		int numClasses = 2;
 		if (debug)
 		{
 			modelPath = "./TestEnv/test_new.model";

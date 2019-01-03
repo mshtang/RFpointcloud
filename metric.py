@@ -37,13 +37,13 @@ def intersection_over_union(conf_mat):
 
 if __name__ == "__main__":
     conf_mat = build_conf_mat_from_file(
-        r'TestEnv/synthetic_testset2_downsample_5000.labels',
-        r'TestEnv/synthetic_testset2_downsample_5000_predicted.labels')
+        r'TestEnv/synthetic_testset2_downsample_5000_predicted.labels',
+        r'TestEnv/synthetic_testset2_downsample_5000_predicted_new.labels')
     # r'./toy_dataset/testset_direct.labels',
     # r'./toy_dataset/testset_restoring.labels')
     print(conf_mat)
     np.savetxt(
-        "TestEnv/synthetic2_report.txt",
+        "TestEnv/synthetic2_report_compare.txt",
         # r'Results/exp5report.txt',
         conf_mat,
         fmt='%8d',
@@ -51,7 +51,7 @@ if __name__ == "__main__":
         header='Confusion matrix is')
     ov_acc = overall_accuracy(conf_mat)
     with open(
-            "TestEnv/synthetic2_report.txt",
+            "TestEnv/synthetic2_report_compare.txt",
             # r'Results/exp5report.txt',
             'a') as f:
         f.write("overall accuracy is: ")
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     IoU = intersection_over_union(conf_mat)
     np.round(IoU, 3, IoU)
     with open(
-            "TestEnv/synthetic2_report.txt",
+            "TestEnv/synthetic2_report_compare.txt",
             # r'Results/exp5report.txt',
             'a') as f:
         f.write("\nIoU is:\n")
